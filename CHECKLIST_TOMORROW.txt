@@ -1,0 +1,233 @@
+════════════════════════════════════════════════════════════
+                  DEPLOYMENT CHECKLIST - DEC 12
+                    🚀 PRODUCTION GO-LIVE 🚀
+════════════════════════════════════════════════════════════
+
+⏰ TIMELINE: 22h - 00h
+
+════════════════════════════════════════════════════════════
+
+AT 22:00 - DOMAIN ACTIVATION
+
+□ Test domain: https://senegal-livres.sn
+  → Should show error 502/503 (before app is running)
+  → That's normal! Server not yet started
+
+□ Wait for DNS to fully propagate
+  → May take 5-10 minutes after activation
+
+════════════════════════════════════════════════════════════
+
+22:10 - BUILD & DEPLOY APPLICATION
+
+□ Run build:
+  $ npm run build
+  
+  Expected: "✓ Compiled successfully"
+
+□ Start server:
+  $ npm start
+  
+  Expected: "▲ Next.js production server"
+  Expected: "Server is ready on http://localhost:3000"
+
+□ Keep terminal window OPEN
+  (Do NOT close npm start)
+
+════════════════════════════════════════════════════════════
+
+22:20 - VERIFY APPLICATION
+
+□ Test home page:
+  https://senegal-livres.sn/
+  → Should show book store
+
+□ Test books page:
+  https://senegal-livres.sn/books
+  → Should show book list
+
+□ Test checkout:
+  https://senegal-livres.sn/checkout
+  → Should show "💳 PayDunya" option
+
+□ Check browser console (F12):
+  → No red errors
+
+════════════════════════════════════════════════════════════
+
+22:30 - CONFIGURE PAYDUNYA WEBHOOK
+
+□ Login to PayDunya:
+  https://www.paydunya.com/dashboard
+
+□ Navigate to Settings:
+  Settings → API Configuration
+
+□ Find Callback/Webhook URL field
+
+□ Enter EXACTLY:
+  https://senegal-livres.sn/api/paydunya/callback
+
+  Note: senegal-livres.sn (with hyphen)
+  Note: /api/paydunya/callback (complete path)
+  Note: HTTPS (not HTTP)
+
+□ SAVE changes
+
+□ Test webhook if option available
+
+════════════════════════════════════════════════════════════
+
+22:45 - TEST PAYMENT FLOW
+
+□ Open checkout:
+  https://senegal-livres.sn/checkout
+
+□ Add book to cart
+
+□ Select payment method:
+  "💳 PayDunya (Wave, Orange Money, Carte)"
+
+□ Click "Pay Now"
+  → Should redirect to PayDunya
+
+□ You should see PayDunya payment form:
+  - Wave option
+  - Orange Money option
+  - Card option
+
+□ Test with Wave:
+  → Enter your Wave number: 77 929 99 93
+  → Or test card if PayDunya provides test card
+
+□ After payment:
+  → Should redirect to "Payment Successful"
+  → Should see "View My Books" button
+
+════════════════════════════════════════════════════════════
+
+23:00 - VERIFY IN PAYDUNYA
+
+□ Go to PayDunya Dashboard
+
+□ Check Transactions section
+
+□ Look for your test transaction:
+  - Amount: 5000 FCFA (or what you tested)
+  - Status: Should be "completed"
+  - Time: Recent (just now)
+
+□ Verify money received:
+  - Check email: papeabdoulaye.gueye@uadb.edu.sn
+  - Should show transaction received
+
+════════════════════════════════════════════════════════════
+
+23:15 - VERIFY IN APPLICATION
+
+□ Check database file:
+  data/market.json
+  
+  Should contain:
+  {
+    "transactions": [
+      {
+        "status": "validated",
+        "paymentMethod": "paydunya",
+        "amount": 5000,
+        "paymentConfirmedAt": "2025-12-12T..."
+      }
+    ]
+  }
+
+□ Check server logs:
+  Should show:
+  [PayDunya] Creating invoice...
+  [PayDunya Callback] Payment validated ✅
+
+════════════════════════════════════════════════════════════
+
+23:30 - FINAL VERIFICATION
+
+□ All systems operational:
+  ✅ Domain: https://senegal-livres.sn
+  ✅ Application: Running
+  ✅ PayDunya: Webhook configured
+  ✅ Payment: Test successful
+  ✅ Database: Transaction saved
+  ✅ Money: Received in email
+
+□ No errors in:
+  ✅ Browser console
+  ✅ Server logs
+  ✅ PayDunya dashboard
+
+════════════════════════════════════════════════════════════
+
+00:00 - PRODUCTION LIVE! 🎉
+
+Application is now LIVE with real payments enabled!
+
+Users can:
+  ✅ Add books to cart
+  ✅ Pay with Wave Money
+  ✅ Pay with Orange Money
+  ✅ Pay with Visa Card
+  ✅ Download purchased books
+
+════════════════════════════════════════════════════════════
+
+🆘 IF SOMETHING FAILS
+
+Domain not loading at 22h:
+  → DNS still propagating
+  → Wait 5-10 more minutes
+  → Try in different browser
+
+Build errors:
+  → Check .env.local syntax
+  → Check Node version (need v18+)
+  → Run: npm install
+
+PayDunya not receiving payments:
+  → Verify callback URL in dashboard
+  → Verify domain is accessible (ping senegal-livres.sn)
+  → Check PayDunya documentation
+
+Payment successful but no webhook:
+  → Verify callback URL is correct
+  → Check server logs for errors
+  → Restart npm start
+
+════════════════════════════════════════════════════════════
+
+KEY CONTACTS
+
+PayDunya Support:    support@paydunya.com
+PayDunya Dashboard:  https://www.paydunya.com/dashboard
+Your Domain:         senegal-livres.sn
+Application:         https://senegal-livres.sn/checkout
+
+════════════════════════════════════════════════════════════
+
+IMPORTANT REMINDERS
+
+✓ Keep npm start terminal OPEN
+  (Close = Application stops)
+
+✓ Use HTTPS only (senegal-livres.sn)
+  (HTTP will not work with PayDunya)
+
+✓ Callback URL must be EXACTLY:
+  https://senegal-livres.sn/api/paydunya/callback
+
+✓ Monitor first 24 hours:
+  - Check logs
+  - Watch PayDunya dashboard
+  - Monitor transactions
+
+════════════════════════════════════════════════════════════
+
+                    YOU'VE GOT THIS! 🚀
+
+════════════════════════════════════════════════════════════

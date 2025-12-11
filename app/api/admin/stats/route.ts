@@ -1,0 +1,59 @@
+import { readDB } from "@/utils/fileDb";
+import { verifyJwt } from "@/utils/jwt";
+import { getCookie } from "@/utils/cookieParser";
+
+export const dynamic = "force-dynamic";
+
+async function isAdmin(req: Request): Promise<boolean> {
+  const adminToken = req.headers.get("x-admin-token");
+  if (adminToken && adminToken === process.env.ADMIN_TOKEN) return true;
+
+  const cookieHeader = req.headers.get('cookie');
+  if (!cookieHeader) {
+    console.log("[isAdmin stats] No cookie header found");
+    return false;
+  }
+
+  const token = getCookie(cookieHeader, 'auth_token');
+  if (!token) {
+    console.log("[isAdmin stats] No auth_token cookie found");
+    return false;
+  }
+
+  const payload = await verifyJwt(token).catch(err => {
+    console.log("[isAdmin stats] JWT verification failed:", err);
+    return null;
+  });
+  
+  const result = !!(payload && payload.role === 'admin');
+  console.log("[isAdmin stats] JWT role:", payload?.role, "Result:", result);
+  return result;
+}
+
+export async function GET(req: Request) {
+  try {
+    if (!(await isAdmin(req))) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const db = await readDB();
+
+    const transactions = db.transactions || [];
+    const books = db.books || [];
+
+    const stats = {
+      successTransactions: transactions.filter((t: any) => t.status === "validated").length,
+      pendingTransactions: transactions.filter((t: any) => t.status === "pending").length,
+      cancelledTransactions: transactions.filter((t: any) => t.status === "cancelled").length,
+      totalRevenue: transactions
+        .filter((t: any) => t.status === "validated")
+        .reduce((sum: number, t: any) => sum + (t.amount || 0), 0),
+      totalBooks: books.length,
+    };
+
+    return Response.json(stats);
+  } catch (error) {
+    console.error("GET /api/admin/stats error:", error);
+    return Response.json({ error: "Failed to fetch stats" }, { status: 500 });
+  }
+}

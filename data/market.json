@@ -1,0 +1,168 @@
+{
+  "books": [
+    {
+      "id": "dda5854b-d079-4b79-be71-18b54037dd0e",
+      "title": "RTCNet: A Robust Hybrid Deep Learning Model for Soil Property Prediction Under Noisy Conditions",
+      "author": "Papa El Hadj Abdoulaye GUEYE",
+      "price": 18000,
+      "description": "Accurate prediction of soil fertility and soil organic carbon (SOC) plays a critical role in precision agriculture and sustainable soil management. However, the high spatial-temporal variability inherent in soil properties, compounded by the prevalence of noisy data in real-world conditions, continues to pose significant modeling challenges. To address these issues, a robust hybrid deep learning model, termed RTCNet, was developed by integrating Recurrent Neural Networks (RNNs), Transformer architectures, and Convolutional Neural Networks (CNNs) into a unified predictive framework. Within RTCNet, a one-dimensional convolutional layer was employed for initial feature extraction, followed by MaxPooling for dimensionality reduction, while sequential dependencies were captured using RNN layers. A multi-head attention mechanism was embedded to enhance the representation of inter-variable relationships, thereby improving the model’s ability to handle complex soil data patterns. RTCNet was benchmarked against two conventional models—Artificial Neural Network (ANN) optimized with a Genetic Algorithm (GA), and a Transformer-CNN hybrid model. Under noise-free conditions, RTCNet achieved the lowest Mean Squared Error (MSE) of 0.1032 and Mean Absolute Error (MAE) of 0.1852. Notably, under increasing noise levels, RTCNet consistently maintained stable performance, whereas the comparative models exhibited significant performance degradation. These findings underscore RTCNet’s superior resilience and adaptability, affirming its utility in field-scale agricultural applications where sensor noise, data sparsity, and environmental fluctuations are prevalent. The demonstrated robustness and predictive accuracy of RTCNet position it as a valuable tool for optimizing nutrient management strategies, enhancing SOC monitoring, and supporting informed decision-making in sustainable farming systems.\nKeywords: RTCNet, Soil fertility, CNN, Transformer, RNN, Sustainable agriculture, Precision agriculture\n\n",
+      "coverImage": "https://i.ibb.co/9HtRsZh8/rtcnet.png",
+      "status": "available",
+      "eBook": true
+    },
+    {
+      "id": "da478dff-ecee-4e79-a6d9-484715bd39c1",
+      "title": "Improved Climate Risk Assessment Tool: Integration of Satellite Data and Machine  Learning Models for Climate Prediction on Farmland Around the Senegal River ",
+      "author": "Papa El Hadj Abdoulaye GUEYE",
+      "price": 18000,
+      "description": "Flooding caused by the Senegal River during the 2024 rainy season has severely \r\nimpacted several regions, particularly Saint-Louis, Matam, and their surrounding areas, \r\ndisrupting infrastructure and livelihoods. In light of this growing vulnerability, \r\nanticipating climatic hazards has become essential. This article presents an innovative \r\napproach combining precipitation data from the UCSB-CHG/CHIRPS/DAILY \r\ncollection and Sentinel-2 imagery to analyze and predict the Standardized Precipitation \r\nIndex (SPI), with a focus on excessive moisture and flood risks. Although the SPI has \r\nhistorically been used for drought monitoring, it also proves relevant for detecting short\r\nterm precipitation excesses (SPI-1, SPI-3), which are potential indicators of flash \r\nfloods. To enhance early detection of these extreme events, we developed a machine \r\nlearning model based on Random Forest, optimized using the RandomizedSearchCV \r\nmethod. The results are promising: the model demonstrates excellent predictive power, \r\nwith a Mean Squared Error (MSE) of 0.00072, a Root Mean Squared Error (RMSE) of \r\n0.0268, a Mean Absolute Error (MAE) of 0.0184, and a coefficient of determination R² \r\n= 0.9991. These performances confirm the model's ability to anticipate risk zones, \r\nparticularly in the agricultural lands along the Senegal River. This approach could be \r\ngeneralized to other watersheds vulnerable to extreme climatic events. ",
+      "coverImage": "https://i.ibb.co/hFTkjYVg/flood-prediction-risk.png",
+      "category": "Science",
+      "status": "available",
+      "eBook": true,
+      "source": "submission"
+    },
+    {
+      "id": "b17b3b0c-1cb8-4fa4-8257-7c4ccb5d6d0d",
+      "title": "Comparative Modeling of Cereal Yields in Senegal:  A Hybrid Approach Using Bi-LSTM and Ensemble  Learning on Agro climatic FAO Data",
+      "author": "Papa El Hadj Abdoulaye GUEYE",
+      "price": 100,
+      "description": "Accurate prediction of cereal yields is critical for food \nsecurity, particularly in Sahelian regions characterized by high \nclimatic variability. This study develops a machine learning \nframework integrating dynamic agroclimatic variables (precipitation, \ntemperature, soil nutrients) with FAO production statistics in Senegal \nover [2000–2024]. Feature selection based on correlation with yield \nindicated that MODIS-derived vegetation indices (NDVI, EVI, SAVI) \nwere less relevant and thus excluded. Several models were evaluated, \nincluding Random Forest, XGBoost, CatBoost, and a Bidirectional \nLSTM explicitly designed to capture temporal dependencies. The Bi\nLSTM achieved the highest predictive accuracy (R2 =0.94, \nRMSE=98.53), followed by CatBoost (R2=0.80,RMSE=216.21), \nXGBoost (R2=0.74, RMSE=243.07), and Random Forest (R2 = 0.72, \nRMSE = 251.46). Robustness was assessed using the Diebold\nMariano test, and interpretability was explored with SHAP values. \nThe study demon strates that agroclimatic and production variables \ndominate over vegetation indices in predicting yields and highlights \nthe trade-off between the superior accuracy of deep learning models \nand their higher computational cost. These results provide a reliable \nand interpretable framework for yield fore casting in Sahelian \nagriculture, emphasizing both methodological rigor and practical \napplicability. \nKeywords— Agricultural yields, Machine learn ing, Agroclimatic \nvariables, Bi-LSTM, Senegal, Crop prediction. ",
+      "coverImage": "https://ibb.co/8DZQFQpK",
+      "status": "available",
+      "eBook": true
+    }
+  ],
+  "users": [
+    {
+      "id": "ad781dc3-ca90-4bc3-afe1-5f6e7e125da3",
+      "name": "Pape El Hadji",
+      "email": "papeabdoulaye.gueye@uadb.edu.sn",
+      "passwordHash": "$2b$10$EHbm.3xCs4M4Z/R/B4rtHeU9D5RH0b4vPF2KWRh0RSjDbvmvUKPNe",
+      "role": "admin",
+      "createdAt": "2025-12-09T16:17:21.025Z",
+      "blocked": false,
+      "cart": [
+        "b17b3b0c-1cb8-4fa4-8257-7c4ccb5d6d0d"
+      ]
+    },
+    {
+      "id": "5b6e5716-963d-435e-89aa-b16ecd13223e",
+      "name": "moussa",
+      "email": "gueyeval@hotmail.com",
+      "passwordHash": "$2b$10$S00sBDTEdNbF2utQqSMwD.EiWB.2.v695QYugSyZNgjETu/kdM7T6",
+      "role": "client",
+      "createdAt": "2025-12-09T19:15:28.891Z",
+      "cart": [
+        "1"
+      ],
+      "blocked": false
+    },
+    {
+      "id": "021d3cfb-e1bc-4add-a04b-6cebe6b2965b",
+      "name": "sokhna",
+      "email": "sokhna@gmail.com",
+      "passwordHash": "$2b$10$4KPEtJcc7IEq7ZrYMyrqHet657SQ7gT0jhW1KvqyWiyzQTT0HbR1S",
+      "role": "client",
+      "createdAt": "2025-12-09T21:24:03.226Z",
+      "blocked": false
+    },
+    {
+      "id": "9a11660c-13b7-4704-b51f-7aec6899101e",
+      "email": "moussa.gueye@uadb.edu.sn",
+      "name": "Pharaon",
+      "passwordHash": "$2b$10$54yzSOGwNoM7Mz1WgjdY6uH.ijZ/NpNAhgNJl0PRJCMG5Y0NCNoNi",
+      "role": "client",
+      "createdAt": "2025-12-10T17:37:52.253Z",
+      "updatedAt": "2025-12-11T17:26:40.718Z"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "45d39efb-379d-4c74-8d1d-c6654b15c0e7",
+      "orderId": "91a1399b-8222-48ba-bf6d-936c84f4f8a2",
+      "userId": null,
+      "bookIds": [
+        "b17b3b0c-1cb8-4fa4-8257-7c4ccb5d6d0d"
+      ],
+      "amount": 100,
+      "paymentMethod": "paydunya",
+      "status": "validated",
+      "createdAt": "2025-12-11T22:01:20.673Z",
+      "paydunyaInvoiceToken": "45d39efb-379d-4c74-8d1d-c6654b15c0e7",
+      "updatedAt": "2025-12-11T22:01:42.261Z"
+    },
+    {
+      "id": "b4709312-6f1f-4d30-a533-8681e32ea902",
+      "orderId": "026f380c-e464-412f-9cd0-fa30441652f4",
+      "userId": null,
+      "bookIds": [
+        "book-1",
+        "book-2"
+      ],
+      "amount": 5000,
+      "paymentMethod": "paydunya",
+      "status": "pending",
+      "createdAt": "2025-12-11T22:06:35.087Z"
+    },
+    {
+      "id": "ad552624-6686-42e8-a4eb-2ce866bdcea3",
+      "orderId": "8a7ac6a9-719b-4c8b-930b-348c2880a076",
+      "userId": null,
+      "bookIds": [
+        "book-1"
+      ],
+      "amount": 5000,
+      "paymentMethod": "paydunya",
+      "status": "pending",
+      "createdAt": "2025-12-11T22:06:36.962Z"
+    },
+    {
+      "id": "fe618524-f6ca-4f9a-80eb-d58ba53e6e56",
+      "orderId": "97afd9ab-6070-47aa-b6c8-1e42f1f5b0e6",
+      "userId": null,
+      "bookIds": [
+        "book-1",
+        "book-2"
+      ],
+      "amount": 5000,
+      "paymentMethod": "paydunya",
+      "status": "pending",
+      "createdAt": "2025-12-11T22:06:51.447Z"
+    },
+    {
+      "id": "17d24590-8587-49bc-97ca-32bc6b8eb3f0",
+      "orderId": "435043a0-5b23-4d87-adec-64110b42ab2c",
+      "userId": null,
+      "bookIds": [
+        "book-1",
+        "book-2"
+      ],
+      "amount": 5000,
+      "paymentMethod": "paydunya",
+      "status": "validated",
+      "createdAt": "2025-12-11T22:07:07.297Z",
+      "paydunyaInvoiceToken": "17d24590-8587-49bc-97ca-32bc6b8eb3f0",
+      "paydunyaResponseCode": "00",
+      "paydunyaStatus": "completed",
+      "updatedAt": "2025-12-11T22:07:10.686Z",
+      "paymentConfirmedAt": "2025-12-11T22:07:10.686Z"
+    }
+  ],
+  "submissions": [
+    {
+      "id": "9ddc01c4-7f0b-446b-be82-bbf5c56a0b11",
+      "title": "Improved Climate Risk Assessment Tool: Integration of Satellite Data and Machine  Learning Models for Climate Prediction on Farmland Around the Senegal River ",
+      "author": "Papa El Hadj Abdoulaye GUEYE",
+      "price": 18000,
+      "description": "Flooding caused by the Senegal River during the 2024 rainy season has severely \r\nimpacted several regions, particularly Saint-Louis, Matam, and their surrounding areas, \r\ndisrupting infrastructure and livelihoods. In light of this growing vulnerability, \r\nanticipating climatic hazards has become essential. This article presents an innovative \r\napproach combining precipitation data from the UCSB-CHG/CHIRPS/DAILY \r\ncollection and Sentinel-2 imagery to analyze and predict the Standardized Precipitation \r\nIndex (SPI), with a focus on excessive moisture and flood risks. Although the SPI has \r\nhistorically been used for drought monitoring, it also proves relevant for detecting short\r\nterm precipitation excesses (SPI-1, SPI-3), which are potential indicators of flash \r\nfloods. To enhance early detection of these extreme events, we developed a machine \r\nlearning model based on Random Forest, optimized using the RandomizedSearchCV \r\nmethod. The results are promising: the model demonstrates excellent predictive power, \r\nwith a Mean Squared Error (MSE) of 0.00072, a Root Mean Squared Error (RMSE) of \r\n0.0268, a Mean Absolute Error (MAE) of 0.0184, and a coefficient of determination R² \r\n= 0.9991. These performances confirm the model's ability to anticipate risk zones, \r\nparticularly in the agricultural lands along the Senegal River. This approach could be \r\ngeneralized to other watersheds vulnerable to extreme climatic events. ",
+      "category": "Science",
+      "eBook": true,
+      "filename": "5124a3c0-3a59-43ab-bff9-c0c8c8abc393.pdf",
+      "pdfPath": "/submissions/5124a3c0-3a59-43ab-bff9-c0c8c8abc393.pdf",
+      "status": "approved",
+      "submittedAt": "2025-12-11T18:11:33.632Z",
+      "submitterEmail": "anonymous"
+    }
+  ]
+}

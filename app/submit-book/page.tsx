@@ -1,0 +1,292 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+interface SubmissionFormData {
+  title: string;
+  author: string;
+  price: string;
+  description: string;
+  category: string;
+  eBook: boolean;
+}
+
+const initialFormData: SubmissionFormData = {
+  title: '',
+  author: '',
+  price: '',
+  description: '',
+  category: '',
+  eBook: false,
+};
+
+export default function SubmitBookPage() {
+  const router = useRouter();
+  const [formData, setFormData] = useState<SubmissionFormData>(initialFormData);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'price' ? (value === '' ? '' : value) : value,
+    }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        setError('Only PDF files are allowed');
+        setPdfFile(null);
+        return;
+      }
+      if (file.size > 50 * 1024 * 1024) { // 50MB limit
+        setError('File size must be less than 50MB');
+        setPdfFile(null);
+        return;
+      }
+      setPdfFile(file);
+      setError('');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      if (!formData.title || !formData.author || !formData.price || !formData.category) {
+        setError('Please fill in all required fields');
+        setLoading(false);
+        return;
+      }
+
+      if (!pdfFile) {
+        setError('Please select a PDF file');
+        setLoading(false);
+        return;
+      }
+
+      // Create FormData for file upload
+      const uploadFormData = new FormData();
+      uploadFormData.append('title', formData.title);
+      uploadFormData.append('author', formData.author);
+      uploadFormData.append('price', formData.price);
+      uploadFormData.append('description', formData.description);
+      uploadFormData.append('category', formData.category);
+      uploadFormData.append('eBook', String(formData.eBook));
+      uploadFormData.append('pdf', pdfFile);
+
+      const res = await fetch('/api/submit-book', {
+        method: 'POST',
+        body: uploadFormData,
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to submit book');
+      }
+
+      setSuccess('✓ Book submitted successfully! The admin will review it soon.');
+      setFormData(initialFormData);
+      setPdfFile(null);
+      
+      // Redirect after 2 seconds
+      setTimeout(() => router.push('/books'), 2000);
+    } catch (err) {
+      console.error('Error submitting book:', err);
+      setError(err instanceof Error ? err.message : 'Failed to submit book');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F4E9CE] p-8">
+      <div className="max-w-2xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-bold text-[#C0392B]">📚 Submit Your Book</h1>
+          <a
+            href="/books"
+            className="text-gray-600 hover:text-gray-800 text-sm"
+          >
+            ← Back to Catalog
+          </a>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-8">
+          <p className="text-gray-600 mb-6">
+            Share your book with our community! Submit your PDF and provide book details. 
+            Our admin team will review and add approved books to the catalog.
+          </p>
+
+          {error && (
+            <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+              {success}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Book Title *
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                  placeholder="Enter book title"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Author *
+                </label>
+                <input
+                  type="text"
+                  name="author"
+                  value={formData.author}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                  placeholder="Enter author name"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Category *
+                </label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                  required
+                >
+                  <option value="">Select a category</option>
+                  <option value="Histoire">Histoire</option>
+                  <option value="Science">Science</option>
+                  <option value="Technologie">Technologie</option>
+                  <option value="Littérature">Littérature</option>
+                  <option value="Éducation">Éducation</option>
+                  <option value="Autre">Autre</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Price (FCFA) *
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                  placeholder="Enter price"
+                  min="0"
+                  step="100"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                placeholder="Enter book description (optional)"
+                rows={4}
+              />
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                name="eBook"
+                id="eBook"
+                checked={formData.eBook}
+                onChange={(e) => setFormData(prev => ({ ...prev, eBook: e.target.checked }))}
+                className="w-4 h-4 text-[#128A41] border-gray-300 rounded focus:ring-[#128A41]"
+              />
+              <label htmlFor="eBook" className="ml-2 text-sm font-semibold text-gray-700">
+                📱 This book is available as eBook (electronic version)
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                PDF File *
+              </label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileChange}
+                  className="w-full"
+                  required
+                />
+                {pdfFile && (
+                  <p className="mt-2 text-green-600 font-semibold">
+                    ✓ {pdfFile.name} ({(pdfFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-2">
+                  Maximum file size: 50MB
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-[#128A41] text-white px-4 py-3 rounded hover:bg-green-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Submitting...' : '📤 Submit Book'}
+              </button>
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="flex-1 bg-gray-400 text-white px-4 py-3 rounded hover:bg-gray-500 font-semibold"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-900">
+            <strong>ℹ️ Note:</strong> All submitted books are reviewed by our admin team before being added to the catalog. 
+            We may contact you for additional information if needed. Once approved, your book will be available for sale!
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

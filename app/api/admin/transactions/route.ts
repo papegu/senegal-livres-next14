@@ -1,0 +1,108 @@
+import { readDB, writeDB } from "@/utils/fileDb";
+import { NextResponse } from "next/server";
+import { verifyJwt } from "@/utils/jwt";
+import { getCookie } from "@/utils/cookieParser";
+
+export const dynamic = "force-dynamic";
+
+async function isAdmin(req: Request): Promise<boolean> {
+  const adminToken = req.headers.get("x-admin-token");
+  if (adminToken && adminToken === process.env.ADMIN_TOKEN) return true;
+
+  const cookieHeader = req.headers.get('cookie');
+  if (!cookieHeader) {
+    console.log("[isAdmin] No cookie header found");
+    return false;
+  }
+
+  const token = getCookie(cookieHeader, 'auth_token');
+  if (!token) {
+    console.log("[isAdmin] No auth_token cookie found");
+    return false;
+  }
+
+  const payload = await verifyJwt(token).catch(err => {
+    console.log("[isAdmin] JWT verification failed:", err);
+    return null;
+  });
+  
+  const result = !!(payload && payload.role === 'admin');
+  console.log("[isAdmin transactions] JWT role:", payload?.role, "Result:", result);
+  return result;
+}
+
+export async function GET(req: Request) {
+  try {
+    if (!(await isAdmin(req))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const db = await readDB();
+    const transactions = (db.transactions || []).sort((a: any, b: any) => 
+      new Date(b.createdAt || b.date || 0).getTime() - new Date(a.createdAt || a.date || 0).getTime()
+    );
+
+    return NextResponse.json({ transactions });
+  } catch (error) {
+    console.error("GET /api/admin/transactions error:", error);
+    return NextResponse.json({ error: "Failed to fetch transactions" }, { status: 500 });
+  }
+}
+
+export async function PUT(req: Request) {
+  try {
+    if (!(await isAdmin(req))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id, status } = await req.json();
+    if (!id || !status) {
+      return NextResponse.json({ error: "Missing id or status" }, { status: 400 });
+    }
+
+    const db = await readDB();
+    db.transactions = db.transactions || [];
+    const idx = db.transactions.findIndex((t: any) => t.id === id);
+    if (idx === -1) {
+      return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+    }
+
+    db.transactions[idx].status = status;
+    db.transactions[idx].updatedAt = new Date().toISOString();
+    await writeDB(db);
+
+    return NextResponse.json({ ok: true, transaction: db.transactions[idx] });
+  } catch (error) {
+    console.error("PUT /api/admin/transactions error:", error);
+    return NextResponse.json({ error: "Failed to update transaction" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    if (!(await isAdmin(req))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await req.json();
+    if (!id) {
+      return NextResponse.json({ error: "Missing transaction id" }, { status: 400 });
+    }
+
+    const db = await readDB();
+    db.transactions = db.transactions || [];
+    const initialLength = db.transactions.length;
+    db.transactions = db.transactions.filter((t: any) => t.id !== id);
+
+    if (db.transactions.length === initialLength) {
+      return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+    }
+
+    await writeDB(db);
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("DELETE /api/admin/transactions error:", error);
+    return NextResponse.json({ error: "Failed to delete transaction" }, { status: 500 });
+  }
+}
