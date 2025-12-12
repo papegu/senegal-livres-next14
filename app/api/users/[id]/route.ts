@@ -1,9 +1,10 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { requireAdmin } from '@/utils/AdminAuth';
-
-export const dynamic = 'force-dynamic';
 
 interface RouteParams {
   params: {
