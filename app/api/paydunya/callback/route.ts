@@ -72,6 +72,39 @@ export async function POST(req: Request) {
           // Écrire la mise à jour
           await writeDB(db);
           console.log(`[PayDunya Callback] ✅ Transaction ${orderId} updated to status: ${paymentStatus}`);
+
+          // Si paiement réussi, envoyer les livres électroniques par email
+          if (isSuccess && transaction.bookIds && transaction.bookIds.length > 0) {
+            try {
+              // Chercher l'utilisateur pour récupérer son email
+              const user = (db.users || []).find((u: any) => u.id === transaction.userId);
+              
+              if (user && user.email) {
+                console.log('[PayDunya Callback] Sending eBooks to:', user.email);
+                
+                // Appeler l'endpoint d'envoi d'email
+                const emailRes = await fetch(
+                  `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/email/send-book`,
+                  {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      email: user.email,
+                      bookIds: transaction.bookIds,
+                      transactionId: transaction.id,
+                      userEmail: user.email,
+                    }),
+                  }
+                );
+
+                const emailResult = await emailRes.json();
+                console.log('[PayDunya Callback] Email sending result:', emailResult);
+              }
+            } catch (emailError) {
+              console.error('[PayDunya Callback] Error sending eBooks:', emailError);
+              // Continue anyway - paiement est validé même si email échoue
+            }
+          }
         } else {
           console.warn('[PayDunya Callback] ⚠️  Transaction not found with orderId:', orderId);
           console.log('[PayDunya Callback] Available transactions:', db.transactions?.map((t: any) => ({ id: t.id, orderId: t.orderId })));

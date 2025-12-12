@@ -28,7 +28,7 @@
       "author": "Papa El Hadj Abdoulaye GUEYE",
       "price": 100,
       "description": "Accurate prediction of cereal yields is critical for food \nsecurity, particularly in Sahelian regions characterized by high \nclimatic variability. This study develops a machine learning \nframework integrating dynamic agroclimatic variables (precipitation, \ntemperature, soil nutrients) with FAO production statistics in Senegal \nover [2000–2024]. Feature selection based on correlation with yield \nindicated that MODIS-derived vegetation indices (NDVI, EVI, SAVI) \nwere less relevant and thus excluded. Several models were evaluated, \nincluding Random Forest, XGBoost, CatBoost, and a Bidirectional \nLSTM explicitly designed to capture temporal dependencies. The Bi\nLSTM achieved the highest predictive accuracy (R2 =0.94, \nRMSE=98.53), followed by CatBoost (R2=0.80,RMSE=216.21), \nXGBoost (R2=0.74, RMSE=243.07), and Random Forest (R2 = 0.72, \nRMSE = 251.46). Robustness was assessed using the Diebold\nMariano test, and interpretability was explored with SHAP values. \nThe study demon strates that agroclimatic and production variables \ndominate over vegetation indices in predicting yields and highlights \nthe trade-off between the superior accuracy of deep learning models \nand their higher computational cost. These results provide a reliable \nand interpretable framework for yield fore casting in Sahelian \nagriculture, emphasizing both methodological rigor and practical \napplicability. \nKeywords— Agricultural yields, Machine learn ing, Agroclimatic \nvariables, Bi-LSTM, Senegal, Crop prediction. ",
-      "coverImage": "https://ibb.co/8DZQFQpK",
+      "coverImage": "https://i.ibb.co/nsJKhKvg/cropyields.png",
       "status": "available",
       "eBook": true
     }
@@ -147,6 +147,114 @@
       "paydunyaStatus": "completed",
       "updatedAt": "2025-12-11T22:07:10.686Z",
       "paymentConfirmedAt": "2025-12-11T22:07:10.686Z"
+    },
+    {
+      "id": "519608e0-aba8-40a6-a8b6-e89a9eca8a31",
+      "orderId": "2351938e-45bb-48d2-84a4-b3f87262bcd5",
+      "userId": null,
+      "bookIds": [
+        "b17b3b0c-1cb8-4fa4-8257-7c4ccb5d6d0d"
+      ],
+      "amount": 100,
+      "paymentMethod": "paydunya",
+      "status": "pending",
+      "createdAt": "2025-12-11T22:59:07.574Z"
+    },
+    {
+      "id": "920cc048-6253-42a7-96f7-771cff726fb2",
+      "orderId": "e45c6cd6-e13c-4811-b62f-d6b907a2b3d7",
+      "userId": null,
+      "bookIds": [
+        "b17b3b0c-1cb8-4fa4-8257-7c4ccb5d6d0d"
+      ],
+      "amount": 100,
+      "paymentMethod": "paydunya",
+      "status": "pending",
+      "createdAt": "2025-12-11T22:59:10.563Z"
+    },
+    {
+      "id": "d710f0c0-4245-41af-8fa8-08647c20565c",
+      "orderId": "2562f4d4-7e7a-4162-8d0b-84a8ca5d4d05",
+      "userId": null,
+      "bookIds": [
+        "b17b3b0c-1cb8-4fa4-8257-7c4ccb5d6d0d"
+      ],
+      "amount": 100,
+      "paymentMethod": "paydunya",
+      "status": "pending",
+      "createdAt": "2025-12-11T22:59:11.487Z"
+    },
+    {
+      "id": "d1b98441-36dc-4dfb-9590-54e7ad1d4f0a",
+      "orderId": "31a415ab-a50f-42eb-9e2a-d3168d043de0",
+      "userId": null,
+      "bookIds": [
+        "b17b3b0c-1cb8-4fa4-8257-7c4ccb5d6d0d"
+      ],
+      "amount": 100,
+      "paymentMethod": "paydunya",
+      "status": "pending",
+      "createdAt": "2025-12-11T22:59:12.166Z"
+    },
+    {
+      "id": "840f0ab3-47a3-4663-b52e-d8111a1c5e96",
+      "orderId": "969a4d47-c49d-420b-b008-787c452052a0",
+      "userId": null,
+      "bookIds": [
+        "b17b3b0c-1cb8-4fa4-8257-7c4ccb5d6d0d"
+      ],
+      "amount": 100,
+      "paymentMethod": "paydunya",
+      "status": "pending",
+      "createdAt": "2025-12-12T00:05:54.122Z"
+    },
+    {
+      "id": "af532f92-dbcd-4542-aa72-9673b998a143",
+      "orderId": "4bba01a1-e8e0-42bc-a2aa-c07ad004a8de",
+      "userId": null,
+      "bookIds": [
+        "b17b3b0c-1cb8-4fa4-8257-7c4ccb5d6d0d"
+      ],
+      "amount": 100,
+      "paymentMethod": "paydunya",
+      "status": "pending",
+      "createdAt": "2025-12-12T00:06:12.979Z"
+    },
+    {
+      "id": "6ea4301b-1660-4d4c-a9dc-7a0f5b7de329",
+      "orderId": "e79fa979-a210-425d-acd3-896a2fc574db",
+      "userId": null,
+      "bookIds": [
+        "b17b3b0c-1cb8-4fa4-8257-7c4ccb5d6d0d"
+      ],
+      "amount": 100,
+      "paymentMethod": "paydunya",
+      "status": "pending",
+      "createdAt": "2025-12-12T00:06:16.945Z"
+    },
+    {
+      "id": "18154a45-11af-432b-93a3-011fc34f7602",
+      "orderId": "c1938116-43b7-4a8e-b05a-df82e63e8e89",
+      "userId": null,
+      "bookIds": [
+        "b17b3b0c-1cb8-4fa4-8257-7c4ccb5d6d0d"
+      ],
+      "amount": 100,
+      "paymentMethod": "paydunya",
+      "status": "pending",
+      "createdAt": "2025-12-12T00:08:37.114Z"
+    },
+    {
+      "id": "80c66b8f-0b79-42ee-bc33-0ffb40db1761",
+      "orderId": "688739b2-cc32-4e16-b2fe-0dbab7ee7905",
+      "userId": null,
+      "bookIds": [
+        "b17b3b0c-1cb8-4fa4-8257-7c4ccb5d6d0d"
+      ],
+      "amount": 100,
+      "paymentMethod": "paydunya",
+      "status": "pending",
+      "createdAt": "2025-12-12T00:22:38.536Z"
     }
   ],
   "submissions": [

@@ -31,7 +31,8 @@ export async function POST(req: Request) {
       NODE_ENV: process.env.NODE_ENV,
     });
 
-    if (!MASTER_KEY || !PUBLIC_KEY || !PRIVATE_KEY || !TOKEN) {
+    // Si MOCK activé, autoriser sans clés pour tests locaux
+    if (!USE_MOCK && (!MASTER_KEY || !PUBLIC_KEY || !PRIVATE_KEY || !TOKEN)) {
       console.error('[PayDunya] Missing API keys');
       return NextResponse.json({ error: 'PayDunya not configured' }, { status: 500 });
     }
@@ -59,7 +60,8 @@ export async function POST(req: Request) {
     await writeDB(db);
 
     // Construire le payload PayDunya
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    // Base URL de l'application (prod: https://www.senegal-livres.sn)
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (IS_SANDBOX ? 'http://localhost:3000' : 'https://www.senegal-livres.sn');
     const payload = {
       invoice: {
         items: [
@@ -92,10 +94,11 @@ export async function POST(req: Request) {
     // Headers pour l'API PayDunya
     const headers = {
       'Content-Type': 'application/json',
-      'PAYDUNYA-MASTER-KEY': MASTER_KEY,
-      'PAYDUNYA-PRIVATE-KEY': PRIVATE_KEY,
-      'PAYDUNYA-PUBLIC-KEY': PUBLIC_KEY,
-      'PAYDUNYA-TOKEN': TOKEN,
+      // En MOCK, on évite d'envoyer des headers non définis
+      'PAYDUNYA-MASTER-KEY': MASTER_KEY || '',
+      'PAYDUNYA-PRIVATE-KEY': PRIVATE_KEY || '',
+      'PAYDUNYA-PUBLIC-KEY': PUBLIC_KEY || '',
+      'PAYDUNYA-TOKEN': TOKEN || '',
     };
 
     // Appel à l'API PayDunya pour créer la facture

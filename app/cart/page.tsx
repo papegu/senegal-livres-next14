@@ -10,6 +10,8 @@ interface Book {
   author: string;
   price: number;
   coverImage: string;
+  eBook?: boolean;
+  pdfFile?: string;
 }
 
 interface CartItem {
@@ -23,51 +25,61 @@ export default function CartPage() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchCart();
-    fetchBooks();
+    fetchData();
   }, []);
 
-  async function fetchCart() {
+  async function fetchData() {
     try {
-      const res = await fetch("/api/cart");
-      if (!res.ok) {
+      // Fetch cart
+      const cartRes = await fetch("/api/cart");
+      if (cartRes.status === 401) {
         router.push("/auth/login");
         return;
       }
-      const data = await res.json();
-      setCart(data.cart || []);
+      if (!cartRes.ok) {
+        throw new Error("Failed to load cart");
+      }
+      const cartData = await cartRes.json();
+      setCart(Array.isArray(cartData.cart) ? cartData.cart : []);
+
+      // Fetch books
+      const booksRes = await fetch("/api/books");
+      if (!booksRes.ok) {
+        throw new Error("Failed to load books");
+      }
+      const booksData = await booksRes.json();
+      const booksList = Array.isArray(booksData.books) ? booksData.books : (Array.isArray(booksData) ? booksData : []);
+      setBooks(booksList);
     } catch (err) {
-      setError("Failed to load cart");
+      const message = err instanceof Error ? err.message : "Failed to load cart";
+      setError(message);
+      console.error("[CartPage] Error:", err);
     } finally {
       setLoading(false);
     }
   }
 
-  async function fetchBooks() {
-    try {
-      const res = await fetch("/api/books");
-      const data = await res.json();
-      setBooks(data);
-    } catch (err) {
-      console.error("Failed to load books");
-    }
-  }
-
   async function removeFromCart(bookId: string) {
+    setRemoving(bookId);
     try {
       const res = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookId, action: "remove" }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setCart(data.cart);
+      if (!res.ok) {
+        throw new Error("Failed to remove item");
       }
+      const data = await res.json();
+      setCart(Array.isArray(data.cart) ? data.cart : []);
     } catch (err) {
       setError("Failed to remove item");
+      console.error("[CartPage] Remove error:", err);
+    } finally {
+      setRemoving(null);
     }
   }
 
@@ -87,7 +99,11 @@ export default function CartPage() {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-[#C0392B] mb-6">Mon Panier</h1>
 
-        {error && <p className="text-red-600 mb-4">{error}</p>}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            ⚠️ {error}
+          </div>
+        )}
 
         {cart.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
@@ -101,58 +117,71 @@ export default function CartPage() {
           </div>
         ) : (
           <>
-            <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              {cartBooks.map((book) => (
-                <div
-                  key={book.id}
-                  className="flex gap-4 p-4 border-b last:border-b-0 items-center"
-                >
-                  <img
-                    src={book.coverImage}
-                    alt={book.title}
-                    className="w-20 h-32 object-cover rounded"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg">{book.title}</h3>
-                    <p className="text-sm text-gray-600">{book.author}</p>
-                    <p className="text-[#128A41] font-semibold mt-2">
-                      {book.price} FCFA
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => removeFromCart(book.id)}
-                    className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+            <div className="space-y-4 mb-6">
+              {cartBooks.length === 0 ? (
+                <p className="text-gray-600">Erreur: Livres non trouvés dans le catalogue</p>
+              ) : (
+                cartBooks.map((book) => (
+                  <div
+                    key={book.id}
+                    className="bg-white rounded-lg shadow-md p-6 flex justify-between items-center"
                   >
-                    Retirer
-                  </button>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg">{book.title}</h3>
+                      <p className="text-gray-600">{book.author}</p>
+                      {book.eBook && (
+                        <p className="text-xs bg-blue-100 text-blue-800 py-1 px-2 rounded inline-block mt-2">
+                          📱 E-Book {book.pdfFile ? "✓" : "❌"}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-[#128A41]">
+                        {book.price} FCFA
+                      </p>
+                      <button
+                        onClick={() => removeFromCart(book.id)}
+                        disabled={removing === book.id}
+                        className="text-red-600 hover:text-red-800 mt-2 disabled:opacity-50"
+                      >
+                        {removing === book.id ? "Suppression..." : "Supprimer"}
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {cartBooks.length > 0 && (
+              <div className="bg-white rounded-lg shadow-md p-8">
+                <div className="flex justify-between items-center mb-6 pb-6 border-b-2">
+                  <span className="text-2xl font-bold">Total:</span>
+                  <span className="text-3xl font-bold text-[#128A41]">
+                    {total} FCFA
+                  </span>
                 </div>
-              ))}
-            </div>
 
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <div className="flex justify-between items-center text-lg font-bold">
-                <span>Total:</span>
-                <span className="text-[#128A41]">{total} FCFA</span>
+                <div className="flex gap-4">
+                  <Link
+                    href="/books"
+                    className="flex-1 bg-gray-500 text-white py-3 rounded hover:bg-gray-600 transition text-center font-bold"
+                  >
+                    Continuer les achats
+                  </Link>
+                  <Link
+                    href="/checkout"
+                    className="flex-1 bg-[#128A41] text-white py-3 rounded hover:bg-green-700 transition text-center font-bold"
+                  >
+                    Passer la commande
+                  </Link>
+                </div>
               </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => router.push("/books")}
-                className="flex-1 bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-700 transition"
-              >
-                Continuer vos achats
-              </button>
-              <button
-                onClick={() => router.push("/checkout")}
-                className="flex-1 bg-[#C0392B] text-white py-2 px-4 rounded hover:bg-black transition"
-              >
-                Procéder au paiement
-              </button>
-            </div>
+            )}
           </>
         )}
       </div>
     </div>
   );
 }
+

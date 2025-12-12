@@ -7,4 +7,6 @@ export interface Book {
   description?: string;
   status?: 'available' | 'pending';
   eBook?: boolean;
+  pdfFile?: string; // URL ou path au fichier PDF
+  pdfFileName?: string; // Nom du fichier PDF
 }

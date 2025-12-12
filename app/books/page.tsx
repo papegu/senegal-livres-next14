@@ -7,6 +7,9 @@ export default function BooksPage() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [cartMessage, setCartMessage] = useState<string>("");
+  const [selectedBook, setSelectedBook] = useState<string | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     async function fetchBooks() {
@@ -14,7 +17,7 @@ export default function BooksPage() {
         const res = await fetch("/api/books");
         if (!res.ok) throw new Error("Failed to fetch books");
         const data = await res.json();
-        setBooks(data.books || []);
+        setBooks(data.books || data || []);
       } catch (error) {
         console.error("Error fetching books:", error);
       } finally {
@@ -26,6 +29,13 @@ export default function BooksPage() {
 
   const handleAddToCart = async (bookId: string, bookTitle: string) => {
     try {
+      // Si c'est un eBook, vérifier qu'on a le PDF
+      const book = books.find(b => b.id === bookId);
+      if (book?.eBook && !book?.pdfFile) {
+        alert("⚠️ Ce livre électronique n'a pas encore de fichier PDF. Veuillez contacter l'administrateur.");
+        return;
+      }
+
       const res = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -46,6 +56,69 @@ export default function BooksPage() {
     } catch (error) {
       console.error("Error adding to cart:", error);
       alert("Failed to add to cart. Please try again.");
+    }
+  };
+
+  const handlePdfSelect = (bookId: string) => {
+    setSelectedBook(bookId);
+  };
+
+  const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      // Vérifier que c'est un PDF
+      if (file.type !== 'application/pdf') {
+        alert('Veuillez sélectionner un fichier PDF');
+        return;
+      }
+
+      // Vérifier la taille (max 50MB)
+      if (file.size > 50 * 1024 * 1024) {
+        alert('Le fichier est trop volumineux (max 50MB)');
+        return;
+      }
+
+      setPdfFile(file);
+    }
+  };
+
+  const handlePdfUpload = async (bookId: string) => {
+    if (!pdfFile) {
+      alert('Veuillez sélectionner un fichier PDF');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', pdfFile);
+      formData.append('bookId', bookId);
+
+      const res = await fetch('/api/books/upload-pdf', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Upload failed');
+      }
+
+      // Rafraîchir les livres
+      const booksRes = await fetch("/api/books");
+      const data = await booksRes.json();
+      setBooks(data.books || data || []);
+
+      setCartMessage('✓ PDF téléchargé avec succès!');
+      setSelectedBook(null);
+      setPdfFile(null);
+      setTimeout(() => setCartMessage(""), 3000);
+    } catch (error) {
+      console.error("Error uploading PDF:", error);
+      alert("Erreur lors du téléchargement du PDF");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -85,9 +158,54 @@ export default function BooksPage() {
               <h2 className="font-bold text-lg">{book.title}</h2>
               <p className="text-sm text-gray-600">{book.author}</p>
 
+              {book.eBook && (
+                <p className="text-xs bg-blue-100 text-blue-800 py-1 px-2 rounded mt-1 inline-block">
+                  📱 E-Book
+                </p>
+              )}
+
               <p className="mt-2 font-semibold text-[#128A41]">
                 {book.price} FCFA
               </p>
+
+              {/* Si c'est un eBook et pas de PDF, afficher option d'upload */}
+              {book.eBook && !book.pdfFile && selectedBook === book.id && (
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                  <p className="text-sm font-semibold mb-2">📄 Ajouter fichier PDF:</p>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={handlePdfChange}
+                    className="text-xs mb-2 w-full"
+                  />
+                  <button
+                    onClick={() => handlePdfUpload(book.id)}
+                    disabled={!pdfFile || uploading}
+                    className="w-full bg-blue-600 text-white py-1 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {uploading ? 'Téléchargement...' : 'Télécharger PDF'}
+                  </button>
+                  <button
+                    onClick={() => { setSelectedBook(null); setPdfFile(null); }}
+                    className="w-full bg-gray-400 text-white py-1 rounded text-sm mt-1 hover:bg-gray-500"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              )}
+
+              {book.eBook && !book.pdfFile && selectedBook !== book.id && (
+                <button
+                  onClick={() => handlePdfSelect(book.id)}
+                  className="w-full mt-4 bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition text-sm"
+                >
+                  📄 Ajouter PDF
+                </button>
+              )}
+
+              {book.eBook && book.pdfFile && (
+                <p className="text-xs text-green-600 mt-2">✓ PDF disponible</p>
+              )}
 
               <div className="mt-4 flex gap-2">
                 <button
@@ -110,3 +228,4 @@ export default function BooksPage() {
     </div>
   );
 }
+
