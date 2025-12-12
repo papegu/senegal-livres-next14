@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+export const runtime = "nodejs";
 
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
