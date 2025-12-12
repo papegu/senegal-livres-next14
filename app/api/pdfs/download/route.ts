@@ -1,11 +1,12 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/utils/jwt";
 import { cookies } from "next/headers";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
-
-export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {

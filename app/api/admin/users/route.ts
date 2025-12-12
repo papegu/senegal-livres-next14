@@ -1,10 +1,11 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/utils/jwt";
 import { getCookie } from "@/utils/cookieParser";
-
-export const dynamic = "force-dynamic";
 
 async function isAdmin(req: Request): Promise<boolean> {
   // First allow static admin token header

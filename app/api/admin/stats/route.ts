@@ -1,8 +1,9 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/utils/jwt";
 import { getCookie } from "@/utils/cookieParser";
-
-export const dynamic = "force-dynamic";
 
 async function isAdmin(req: Request): Promise<boolean> {
   const adminToken = req.headers.get("x-admin-token");

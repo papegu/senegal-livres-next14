@@ -1,9 +1,10 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyJwt } from '@/utils/jwt';
 import { prisma } from '@/lib/prisma';
-
-export const dynamic = 'force-dynamic';
 
 // Vérifier les privilèges admin via JWT cookie
 const requireAdminAuth = async (req: NextRequest) => {

@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // app/api/transactions/route.ts
 import { NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
