@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { verifyJwt } from "@/utils/jwt";
