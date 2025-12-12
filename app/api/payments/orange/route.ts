@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readDB, writeDB } from "@/utils/fileDb";
+import { prisma } from "@/lib/prisma";
 import { v4 as uuid } from "uuid";
 import { verifyJwt } from "@/utils/jwt";
 import { cookies } from "next/headers";
@@ -25,13 +25,16 @@ export async function POST(req: Request) {
     // Get user from auth token
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value;
-    let userId = null;
+    let userId: number | null = null;
 
     if (token) {
       try {
         const payload = await verifyJwt(token);
         if (payload) {
-          userId = payload.sub;
+          const parsed = Number(payload.sub);
+          if (!Number.isNaN(parsed)) {
+            userId = parsed;
+          }
         }
       } catch (err) {
         console.error("Token verification failed:", err);
@@ -43,26 +46,21 @@ export async function POST(req: Request) {
 
     // If no API key configured, use sandbox mock URL
     if (!process.env.ORANGE_API_KEY || process.env.ORANGE_API_KEY === "sandbox_key") {
-      const db = await readDB();
-      db.transactions = db.transactions || [];
-
-      const tx = {
-        id: uuid(),
-        orderId,
-        userId: userId || null,
-        amount,
-        paymentMethod: "orange",
-        status: "pending",
-        createdAt: new Date().toISOString(),
-      };
-
-      db.transactions.push(tx);
-      await writeDB(db);
+      const tx = await prisma.transaction.create({
+        data: {
+          uuid: uuid(),
+          orderId,
+          userId: userId || null,
+          amount: Math.round(Number(amount)),
+          paymentMethod: "orange",
+          status: "pending",
+        },
+      });
 
       return NextResponse.json({
         payment_url: `${baseUrl}/payment-sandbox?method=orange&orderId=${orderId}`,
         order_id: orderId,
-        transactionId: tx.id,
+        transactionId: tx.uuid || tx.id,
         sandbox: true,
         message: "Using sandbox mode. Add ORANGE_API_KEY to .env.local for production.",
       });
@@ -104,27 +102,22 @@ export async function POST(req: Request) {
     }
 
     // Create transaction in DB
-    const db = await readDB();
-    db.transactions = db.transactions || [];
-
-    const tx = {
-      id: uuid(),
-      orderId: orangeResult.order_id || orderId,
-      userId: userId || null,
-      amount,
-      paymentMethod: "orange",
-      status: "pending",
-      orangeOrderId: orangeResult.order_id,
-      createdAt: new Date().toISOString(),
-    };
-
-    db.transactions.push(tx);
-    await writeDB(db);
+    const tx = await prisma.transaction.create({
+      data: {
+        uuid: uuid(),
+        orderId: orangeResult.order_id || orderId,
+        userId: userId || null,
+        amount: Math.round(Number(amount)),
+        paymentMethod: "orange",
+        status: "pending",
+        providerTxId: orangeResult.order_id,
+      },
+    });
 
     return NextResponse.json({
       payment_url: orangeResult.checkout_url || orangeResult.payment_url,
       order_id: orangeResult.order_id,
-      transactionId: tx.id,
+      transactionId: tx.uuid || tx.id,
     });
   } catch (error) {
     console.error("Orange Money integration error:", error);

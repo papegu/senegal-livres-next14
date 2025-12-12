@@ -1,7 +1,19 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB } from '@/utils/fileDb';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
+
+// CORS headers pour permettre PayDunya et le front (production)
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://senegal-livres.sn',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Credentials': 'true',
+};
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: corsHeaders });
+}
 
 export async function POST(req: Request) {
   try {
@@ -40,74 +52,65 @@ export async function POST(req: Request) {
     // Mettre à jour la transaction dans la base de données
     if (orderId) {
       try {
-        const db = await readDB();
-        
-        // Trouver la transaction
-        const transactionIndex = db.transactions?.findIndex(
-          (t: any) => t.orderId === orderId || t.id === orderId
-        ) ?? -1;
-
-        console.log('[PayDunya Callback] Transaction search result:', {
-          orderId,
-          found: transactionIndex !== -1,
-          index: transactionIndex,
-          totalTransactions: db.transactions?.length || 0,
+        const tx = await prisma.transaction.findFirst({
+          where: { OR: [{ orderId }, { uuid: orderId }] },
         });
 
-        if (transactionIndex !== -1 && db.transactions && transactionIndex >= 0) {
-          const transaction = db.transactions[transactionIndex];
-          console.log('[PayDunya Callback] Found transaction:', transaction);
+        if (tx) {
+          const updated = await prisma.transaction.update({
+            where: { id: tx.id },
+            data: {
+              status: paymentStatus,
+              paydunyaInvoiceToken: invoiceToken || tx.paydunyaInvoiceToken,
+              paydunyaResponseCode: responseCode,
+              paydunyaStatus: status,
+              paymentConfirmedAt: isSuccess ? new Date() : tx.paymentConfirmedAt,
+            },
+          });
 
-          // Mettre à jour le statut
-          db.transactions[transactionIndex] = {
-            ...transaction,
-            status: paymentStatus,
-            paydunyaInvoiceToken: invoiceToken || transaction.paydunyaInvoiceToken,
-            paydunyaResponseCode: responseCode,
-            paydunyaStatus: status,
-            updatedAt: new Date().toISOString(),
-            paymentConfirmedAt: isSuccess ? new Date().toISOString() : transaction.paymentConfirmedAt,
-          };
-
-          // Écrire la mise à jour
-          await writeDB(db);
           console.log(`[PayDunya Callback] ✅ Transaction ${orderId} updated to status: ${paymentStatus}`);
 
-          // Si paiement réussi, envoyer les livres électroniques par email
-          if (isSuccess && transaction.bookIds && transaction.bookIds.length > 0) {
+          if (isSuccess && updated.bookIds) {
             try {
-              // Chercher l'utilisateur pour récupérer son email
-              const user = (db.users || []).find((u: any) => u.id === transaction.userId);
-              
-              if (user && user.email) {
-                console.log('[PayDunya Callback] Sending eBooks to:', user.email);
-                
-                // Appeler l'endpoint d'envoi d'email
-                const emailRes = await fetch(
-                  `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/email/send-book`,
-                  {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      email: user.email,
-                      bookIds: transaction.bookIds,
-                      transactionId: transaction.id,
-                      userEmail: user.email,
-                    }),
-                  }
-                );
+              const parsedBookIds = (() => {
+                try { return JSON.parse(updated.bookIds); } catch { return []; }
+              })();
+              const bookIdsArray = Array.isArray(parsedBookIds)
+                ? parsedBookIds
+                : typeof updated.bookIds === 'string'
+                  ? updated.bookIds.split(',').map((v: string) => v.trim()).filter(Boolean)
+                  : [];
 
-                const emailResult = await emailRes.json();
-                console.log('[PayDunya Callback] Email sending result:', emailResult);
+              if (bookIdsArray.length > 0 && updated.userId) {
+                const user = await prisma.user.findUnique({ where: { id: updated.userId } });
+
+                if (user?.email) {
+                  console.log('[PayDunya Callback] Sending eBooks to:', user.email);
+
+                  const emailRes = await fetch(
+                    `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/email/send-book`,
+                    {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        email: user.email,
+                        bookIds: bookIdsArray,
+                        transactionId: updated.uuid || updated.id,
+                        userEmail: user.email,
+                      }),
+                    }
+                  );
+
+                  const emailResult = await emailRes.json();
+                  console.log('[PayDunya Callback] Email sending result:', emailResult);
+                }
               }
             } catch (emailError) {
               console.error('[PayDunya Callback] Error sending eBooks:', emailError);
-              // Continue anyway - paiement est validé même si email échoue
             }
           }
         } else {
           console.warn('[PayDunya Callback] ⚠️  Transaction not found with orderId:', orderId);
-          console.log('[PayDunya Callback] Available transactions:', db.transactions?.map((t: any) => ({ id: t.id, orderId: t.orderId })));
         }
       } catch (dbError) {
         console.error('[PayDunya Callback] Error updating database:', dbError);
@@ -162,14 +165,14 @@ export async function POST(req: Request) {
       }
     }
     
-    // Retourner OK à PayDunya
+    // Retourner OK à PayDunya avec CORS headers
     console.log('[PayDunya Callback] Returning 200 OK to PayDunya');
-    return new Response('OK', { status: 200 });
+    return new Response('OK', { status: 200, headers: corsHeaders });
     
   } catch (error) {
     console.error('[PayDunya Callback] ❌ Error processing webhook:', error);
     // Toujours retourner OK pour éviter que PayDunya réessaie indéfiniment
-    return new Response('OK', { status: 200 });
+    return new Response('OK', { status: 200, headers: corsHeaders });
   }
 }
 
@@ -180,5 +183,5 @@ export async function GET(req: Request) {
     endpoint: '/api/paydunya/callback',
     method: 'POST',
     description: 'Webhook for receiving payment confirmations from PayDunya',
-  });
+  }, { headers: corsHeaders });
 }

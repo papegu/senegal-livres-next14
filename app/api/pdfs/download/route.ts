@@ -1,4 +1,4 @@
-import { readDB } from "@/utils/fileDb";
+import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/utils/jwt";
 import { cookies } from "next/headers";
 import { readFile } from "fs/promises";
@@ -28,18 +28,26 @@ export async function GET(req: Request) {
       return Response.json({ error: "bookId required" }, { status: 400 });
     }
 
-    // Check if user has purchased this book
-    const db = await readDB();
-    const purchases = (db.purchases || []).filter(
-      (p: any) => p.userId === payload.sub && p.bookIds.includes(bookId)
-    );
+    const userId = Number(payload.sub);
+    if (Number.isNaN(userId)) {
+      return Response.json({ error: "Invalid user" }, { status: 400 });
+    }
 
-    if (purchases.length === 0) {
+    const bookIdInt = Number(bookId);
+    if (Number.isNaN(bookIdInt)) {
+      return Response.json({ error: "Invalid bookId" }, { status: 400 });
+    }
+
+    const purchase = await prisma.purchase.findFirst({
+      where: { userId, bookId: bookIdInt },
+    });
+
+    if (!purchase) {
       return Response.json({ error: "Access denied" }, { status: 403 });
     }
 
     // Serve PDF file
-    const pdfPath = join(process.cwd(), "public", "pdfs", `${bookId}.pdf`);
+    const pdfPath = join(process.cwd(), "public", "pdfs", `${bookIdInt}.pdf`);
 
     if (!existsSync(pdfPath)) {
       return Response.json({ error: "PDF not found" }, { status: 404 });
@@ -50,7 +58,7 @@ export async function GET(req: Request) {
     return new Response(pdfData, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${bookId}.pdf"`,
+        "Content-Disposition": `attachment; filename="${bookIdInt}.pdf"`,
       },
     });
   } catch (error) {

@@ -62,10 +62,16 @@ export default function DatabaseAdmin() {
       }
 
       const data = await res.json();
+      
+      // Vérifier si c'est un avertissement (base de données pas encore initialisée)
+      if (data.warning) {
+        setError(data.warning);
+      }
+      
       setStats(data);
     } catch (err) {
       console.error('Error fetching stats:', err);
-      setError('Failed to load database statistics');
+      setError('Base de données non disponible. Veuillez exécuter: npx prisma migrate dev');
     } finally {
       setLoading(false);
     }

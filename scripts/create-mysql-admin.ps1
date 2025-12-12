@@ -11,7 +11,13 @@ Write-Host ""
 $mysqlUser = "papeabdoulaye"
 $mysqlPassword = "pape1982"
 $email = "papeabdoulaye.gueye@uadb.edu.sn"
-$rootPassword = "password"  # À adapter si différent
+$secondaryUser = "admin_root"
+$secondaryPassword = "pape@@@@"
+$rootPassword = $env:MYSQL_ROOT_PASSWORD
+if (-not $rootPassword -or $rootPassword.Trim() -eq "") {
+    $rootPassword = Read-Host -AsSecureString "Entrez le mot de passe root MySQL"
+    $rootPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($rootPassword))
+}
 
 Write-Host "Configuration:" -ForegroundColor Yellow
 Write-Host "  Utilisateur MySQL: $mysqlUser" -ForegroundColor White
@@ -42,20 +48,23 @@ Write-Host "Exécution des commandes SQL..." -ForegroundColor Cyan
 
 # SQL à exécuter
 $sqlCommands = @"
--- Créer l'utilisateur MySQL
+-- Créer la base si absente
+CREATE DATABASE IF NOT EXISTS senegal_livres;
+
+-- Administrateur principal
 CREATE USER IF NOT EXISTS '$mysqlUser'@'localhost' IDENTIFIED BY '$mysqlPassword';
-
--- Accorder tous les privilèges
 GRANT ALL PRIVILEGES ON *.* TO '$mysqlUser'@'localhost' WITH GRANT OPTION;
+GRANT SUPER, CREATE USER ON *.* TO '$mysqlUser'@'localhost';
 
--- Accorder les privilèges de gestion des utilisateurs
-GRANT SUPER ON *.* TO '$mysqlUser'@'localhost';
+-- Second administrateur root
+CREATE USER IF NOT EXISTS '$secondaryUser'@'localhost' IDENTIFIED BY '$secondaryPassword';
+GRANT ALL PRIVILEGES ON *.* TO '$secondaryUser'@'localhost' WITH GRANT OPTION;
+GRANT SUPER, CREATE USER ON *.* TO '$secondaryUser'@'localhost';
 
--- Rafraîchir les privilèges
 FLUSH PRIVILEGES;
 
 -- Afficher la confirmation
-SELECT User, Host FROM mysql.user WHERE User='$mysqlUser';
+SELECT User, Host FROM mysql.user WHERE User in ('$mysqlUser','$secondaryUser');
 "@
 
 # Exécuter les commandes SQL
@@ -77,10 +86,15 @@ try {
         Write-Host "Alternative: Exécution via mysql -e" -ForegroundColor Yellow
         
         & mysql -u root -p$rootPassword -e "
-            CREATE USER IF NOT EXISTS '$mysqlUser'@'localhost' IDENTIFIED BY '$mysqlPassword';
+            CREATE DATABASE IF NOT EXISTS senegal_livres;
+            CREATE USER IF NOT EXISTS '$mysqlUser'@'localhost' IDENTIFIED WITH mysql_native_password BY '$mysqlPassword';
             GRANT ALL PRIVILEGES ON *.* TO '$mysqlUser'@'localhost' WITH GRANT OPTION;
+            GRANT SUPER, CREATE USER ON *.* TO '$mysqlUser'@'localhost';
+            CREATE USER IF NOT EXISTS '$secondaryUser'@'localhost' IDENTIFIED WITH mysql_native_password BY '$secondaryPassword';
+            GRANT ALL PRIVILEGES ON *.* TO '$secondaryUser'@'localhost' WITH GRANT OPTION;
+            GRANT SUPER, CREATE USER ON *.* TO '$secondaryUser'@'localhost';
             FLUSH PRIVILEGES;
-            SELECT User, Host FROM mysql.user WHERE User='$mysqlUser';
+            SELECT User, Host FROM mysql.user WHERE User in ('$mysqlUser','$secondaryUser');
         "
     }
 }

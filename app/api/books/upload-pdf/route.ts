@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB } from '@/utils/fileDb';
+import { prisma } from '@/lib/prisma';
 import { verifyJwt } from '@/utils/jwt';
 import { cookies } from 'next/headers';
 import fs from 'fs';
@@ -21,9 +21,8 @@ export async function POST(req: Request) {
     }
 
     // Vérifier que c'est un admin
-    const db = await readDB();
-    const user = (db.users || []).find((u: any) => u.id === payload.sub);
-    
+    const userId = Number(payload.sub);
+    const user = Number.isNaN(userId) ? null : await prisma.user.findUnique({ where: { id: userId } });
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ message: 'Admin access required' }, { status: 403 });
     }
@@ -60,22 +59,23 @@ export async function POST(req: Request) {
     fs.writeFileSync(filePath, buffer);
 
     // Mettre à jour la base de données
-    const bookIndex = (db.books || []).findIndex((b: any) => b.id === bookId);
-    
-    if (bookIndex === -1) {
+    const bookWhere = Number.isNaN(Number(bookId)) ? { uuid: bookId } : { id: Number(bookId) };
+    const updated = await prisma.book.update({
+      where: bookWhere,
+      data: {
+        pdfFile: `/pdfs/${fileName}`,
+        pdfFileName: fileName,
+      },
+    }).catch(() => null);
+
+    if (!updated) {
       return NextResponse.json({ message: 'Book not found' }, { status: 404 });
     }
-
-    // Mettre à jour le livre avec le chemin du PDF
-    db.books[bookIndex].pdfFile = `/pdfs/${fileName}`;
-    db.books[bookIndex].pdfFileName = fileName;
-
-    await writeDB(db);
 
     return NextResponse.json({
       ok: true,
       message: 'PDF uploaded successfully',
-      book: db.books[bookIndex],
+      book: updated,
     });
   } catch (error) {
     console.error('PDF upload error:', error);

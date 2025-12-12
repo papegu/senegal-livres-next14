@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { readDB, writeDB } from "../../../utils/fileDb";
-import { v4 as uuid } from "uuid";
 import bcryptjs from "bcryptjs";
-import { signJwt } from "../../../utils/jwt";
+import { prisma } from "@/lib/prisma";
+import { signJwt } from "@/utils/jwt";
 
 // POST /api/auth
 // Body: { action: "login" | "register", email, password, name? }
@@ -17,12 +16,9 @@ export async function POST(req: Request) {
     );
   }
 
-  const db = await readDB();
-  db.users = db.users || [];
-
   // LOGIN
   if (action === "login") {
-    const user = db.users.find((u: any) => u.email === email);
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       return NextResponse.json(
         { error: "User not found" },
@@ -30,7 +26,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const isValidPassword = await bcryptjs.compare(password, user.passwordHash);
+    const isValidPassword = await bcryptjs.compare(password, user.password);
     if (!isValidPassword) {
       return NextResponse.json(
         { error: "Invalid password" },
@@ -40,7 +36,7 @@ export async function POST(req: Request) {
 
     // Generate JWT token
     const token = await signJwt({
-      sub: user.id,
+      sub: String(user.id),
       email: user.email,
       role: user.role,
     });
@@ -73,7 +69,8 @@ export async function POST(req: Request) {
     }
 
     // Check if user already exists
-    if (db.users.some((u: any) => u.email === email)) {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
       return NextResponse.json(
         { error: "User already exists" },
         { status: 409 }
@@ -83,17 +80,14 @@ export async function POST(req: Request) {
     // Hash password
     const passwordHash = await bcryptjs.hash(password, 10);
 
-    const newUser = {
-      id: uuid(),
-      name,
-      email,
-      passwordHash,
-      role: "client",
-      createdAt: new Date().toISOString(),
-    };
-
-    db.users.push(newUser);
-    await writeDB(db);
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: passwordHash,
+        role: "client",
+      },
+    });
 
     return NextResponse.json(
       { ok: true, userId: newUser.id, message: "User registered successfully" },

@@ -1,5 +1,5 @@
-import { readDB, writeDB } from "@/utils/fileDb";
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/utils/jwt";
 import { getCookie } from "@/utils/cookieParser";
 import { v4 as uuidv4 } from "uuid";
@@ -38,10 +38,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const db = await readDB();
-    const submissions = (db.submissions || []).sort((a: any, b: any) =>
-      new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
-    );
+    const submissions = await prisma.submission.findMany({ orderBy: { submittedAt: "desc" } });
 
     return NextResponse.json({ submissions });
   } catch (error) {
@@ -62,43 +59,53 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Missing submissionId or action" }, { status: 400 });
     }
 
-    const db = await readDB();
-    db.submissions = db.submissions || [];
-    db.books = db.books || [];
-
-    const submissionIdx = db.submissions.findIndex((s: any) => s.id === submissionId);
-    if (submissionIdx === -1) {
+    const numericId = Number(submissionId);
+    const sub = await prisma.submission.findFirst({
+      where: {
+        OR: [
+          Number.isNaN(numericId) ? undefined : { id: numericId },
+          { uuid: String(submissionId) },
+        ].filter(Boolean) as any,
+      },
+    });
+    if (!sub) {
       return NextResponse.json({ error: "Submission not found" }, { status: 404 });
     }
-
-    const submission = db.submissions[submissionIdx];
 
     if (action === 'approve') {
       if (!coverImage) {
         return NextResponse.json({ error: "Cover image URL required" }, { status: 400 });
       }
 
-      // Add book to catalog
-      const newBook = {
-        id: uuidv4(),
-        title: submission.title,
-        author: submission.author,
-        price: submission.price,
-        description: submission.description,
-        coverImage,
-        category: submission.category,
-        status: 'available',
-        eBook: submission.eBook || false,
-        source: 'submission', // Track that this came from a submission
-      };
+      await prisma.$transaction(async () => {
+        await prisma.submission.update({
+          where: { id: sub.id },
+          data: { status: 'approved', reviewedAt: new Date() },
+        });
 
-      db.books.push(newBook);
-      submission.status = 'approved';
+        await prisma.book.create({
+          data: {
+            uuid: uuidv4(),
+            title: sub.title,
+            author: sub.author,
+            price: (sub as any).price ? Number((sub as any).price) : 0,
+            description: sub.description,
+            coverImage,
+            category: sub.category,
+            status: 'available',
+            eBook: (sub as any).eBook ?? true,
+            source: 'submission',
+            pdfFile: sub.pdfFile || '',
+            pdfFileName: sub.pdfFileName || '',
+          },
+        });
+      });
     } else if (action === 'reject') {
-      submission.status = 'rejected';
+      await prisma.submission.update({
+        where: { id: sub.id },
+        data: { status: 'rejected', reviewedAt: new Date() },
+      });
     }
-
-    await writeDB(db);
 
     return NextResponse.json({
       ok: true,

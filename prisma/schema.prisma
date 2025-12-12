@@ -1,169 +1,117 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client"
-  output   = "../node_modules/.prisma/client"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
-// ===========================
-// USER MODEL
-// ===========================
-model User {
-  id        Int       @id @default(autoincrement())
-  name      String
-  email     String    @unique
-  password  String    // bcrypt hashed password
-  role      String    @default("client") // "admin" or "client"
-  blocked   Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  // Relations
-  transactions Transaction[]
-  purchases    Purchase[]
-  submissions  Submission[]
-  cartItems    CartItem[]
+enum Role {
+  client
+  admin
 }
 
-// ===========================
-// BOOK MODEL
-// ===========================
-model Book {
+model adminstats {
+  id                Int      @id @default(autoincrement())
+  totalUsers        Int      @default(0)
+  totalBooks        Int      @default(0)
+  totalTransactions Int      @default(0)
+  totalRevenue      Int      @default(0)
+  lastUpdated       DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model book {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique(map: "Book_uuid_key")
+  title       String
+  author      String
+  description String   @db.LongText
+  price       Int
+  coverImage  String   @default("")
+  pdfFile     String   @default("")
+  pdfFileName String   @default("")
+  stock       Int      @default(0)
+  category    String   @default("")
+  status      String   @default("available")
+  eBook       Boolean  @default(true)
+  source      String   @default("admin")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model cartitem {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  bookId    Int
+  quantity  Int      @default(1)
+  addedAt   DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, bookId], map: "CartItem_userId_bookId_key")
+}
+
+model purchase {
   id            Int       @id @default(autoincrement())
-  uuid          String    @unique @default(uuid()) // Compatibilité avec ancien code
-  title         String
-  author        String
-  description   String    @db.LongText @default("")
-  price         Int       // En centimes (5000 = 50 USD)
-  coverImage    String    @default("")
-  pdfFile       String    @default("") // URL du PDF
-  pdfFileName   String    @default("")
-  stock         Int       @default(0) // Nombre de copies disponibles
-  category      String    @default("")
-  status        String    @default("available") // "available", "archived"
-  eBook         Boolean   @default(true)
-  source        String    @default("admin") // "admin" or "submission"
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Relations
-  purchases   Purchase[]
-  cartItems   CartItem[]
-}
-
-// ===========================
-// TRANSACTION MODEL (Paiements)
-// ===========================
-model Transaction {
-  id                        Int       @id @default(autoincrement())
-  uuid                      String    @unique @default(uuid())
-  orderId                   String    @unique
-  userId                    Int?
-  amount                    Int       // Montant en centimes
-  paymentMethod             String    // "paydunya", "stripe", "wave", "orange", "ecobank"
-  status                    String    // "pending", "validated", "failed", "cancelled"
-  
-  // PayDunya specific
-  paydunyaInvoiceToken      String    @default("")
-  paydunyaResponseCode      String    @default("")
-  paydunyaStatus            String    @default("")
-  
-  // General payment provider info
-  providerTxId              String    @default("")
-  
-  // Metadata
-  bookIds                   String    @default("") // JSON array of book IDs
-  description               String    @default("")
-  customerEmail             String    @default("")
-  rawPayload                String    @db.LongText @default("") // JSON du payload du fournisseur
-  
-  paymentConfirmedAt        DateTime?
-  createdAt                 DateTime  @default(now())
-  updatedAt                 DateTime  @updatedAt
-
-  // Relations
-  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  purchases   Purchase[]
-}
-
-// ===========================
-// PURCHASE MODEL (Achats de livres)
-// ===========================
-model Purchase {
-  id            Int       @id @default(autoincrement())
-  uuid          String    @unique @default(uuid())
+  uuid          String    @unique(map: "Purchase_uuid_key")
   userId        Int
   bookId        Int
   transactionId Int?
-  amount        Int       // Prix du livre au moment de l'achat
+  amount        Int
   downloadCount Int       @default(0)
   lastDownload  DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-
-  // Relations
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  book        Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
 }
 
-// ===========================
-// CART MODEL
-// ===========================
-model CartItem {
-  id        Int       @id @default(autoincrement())
-  userId    Int
-  bookId    Int
-  quantity  Int       @default(1)
-  addedAt   DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  // Relations
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  book      Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, bookId])
-}
-
-// ===========================
-// SUBMISSION MODEL (Soumissions d'auteurs)
-// ===========================
-model Submission {
+model submission {
   id          Int       @id @default(autoincrement())
-  uuid        String    @unique @default(uuid())
+  uuid        String    @unique(map: "Submission_uuid_key")
   userId      Int
   title       String
   author      String
-  description String    @db.LongText @default("")
+  description String    @db.LongText
   pdfFile     String    @default("")
   pdfFileName String    @default("")
   category    String    @default("")
-  status      String    @default("pending") // "pending", "approved", "rejected"
+  status      String    @default("pending")
   reviewNotes String    @db.LongText @default("")
-  
   submittedAt DateTime  @default(now())
   reviewedAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
-  // Relations
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// ===========================
-// ADMIN STATS (Optional - pour performance)
-// ===========================
-model AdminStats {
-  id                Int       @id @default(autoincrement())
-  totalUsers        Int       @default(0)
-  totalBooks        Int       @default(0)
-  totalTransactions Int       @default(0)
-  totalRevenue      Int       @default(0) // En centimes
-  lastUpdated       DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+model transaction {
+  id                   Int       @id @default(autoincrement())
+  uuid                 String    @unique(map: "Transaction_uuid_key")
+  orderId              String    @unique(map: "Transaction_orderId_key")
+  userId               Int?
+  amount               Int
+  paymentMethod        String
+  status               String
+  paydunyaInvoiceToken String    @default("")
+  paydunyaResponseCode String    @default("")
+  paydunyaStatus       String    @default("")
+  providerTxId         String    @default("")
+  bookIds              String    @default("")
+  description          String    @default("")
+  customerEmail        String    @default("")
+  rawPayload           String    @db.LongText @default("")
+  paymentConfirmedAt   DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model user {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique(map: "User_email_key")
+  password  String
+  role      Role     @default(client)
+  blocked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

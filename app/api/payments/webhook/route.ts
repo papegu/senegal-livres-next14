@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { readDB, writeDB } from "../../../../utils/fileDb";
-import { v4 as uuid } from "uuid";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -17,18 +16,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing orderId or status" }, { status: 400 });
   }
 
-  const db = await readDB();
-  db.transactions = db.transactions || [];
-
-  const tx = db.transactions.find((t: any) => t.orderId === orderId);
+  const tx = await prisma.transaction.findFirst({ where: { orderId } });
   if (!tx) {
     return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
   }
 
-  tx.status = status;
-  tx.updatedAt = new Date().toISOString();
+  const updated = await prisma.transaction.update({
+    where: { id: tx.id },
+    data: { status },
+  });
 
-  await writeDB(db);
-
-  return NextResponse.json({ ok: true, transaction: tx });
+  return NextResponse.json({ ok: true, transaction: updated });
 }

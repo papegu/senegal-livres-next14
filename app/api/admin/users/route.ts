@@ -1,7 +1,6 @@
-import { readDB, writeDB } from "@/utils/fileDb";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { v4 as uuid } from "uuid";
+import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/utils/jwt";
 import { getCookie } from "@/utils/cookieParser";
 
@@ -30,8 +29,16 @@ async function isAdmin(req: Request): Promise<boolean> {
     return null;
   });
   
-  const result = !!(payload && payload.role === 'admin');
-  console.log("[isAdmin] JWT payload role:", payload?.role, "Result:", result);
+  const userId = payload?.sub ? Number(payload.sub) : NaN;
+  if (!payload || payload.role !== 'admin' || Number.isNaN(userId)) {
+    console.log("[isAdmin] Invalid payload or role not admin", payload);
+    return false;
+  }
+
+  // Confirm admin role in DB
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const result = !!(user && user.role === 'admin');
+  console.log("[isAdmin] DB admin check result:", result);
   return result;
 }
 
@@ -41,16 +48,18 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const db = await readDB();
-    
-    // Remove sensitive data from response, include all users so admins can manage roles
-    const users = (db.users || []).map((user: any) => ({
-      id: user.id,
-      email: user.email,
-      name: user.name || "",
-      role: user.role || "client",
-      createdAt: user.createdAt,
-    }));
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        blocked: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
     return NextResponse.json({ users });
   } catch (error) {
@@ -70,28 +79,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing email or password" }, { status: 400 });
     }
 
-    const db = await readDB();
-    db.users = db.users || [];
-    if (db.users.some((u: any) => u.email === email)) {
-      return NextResponse.json({ error: "Email already exists" }, { status: 400 });
-    }
-
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = {
-      id: uuid(),
-      email,
-      name: name || "",
-      passwordHash,
-      role: "client",
-      createdAt: new Date().toISOString(),
-    };
 
-    db.users.push(user);
-    await writeDB(db);
+    const user = await prisma.user.create({
+      data: {
+        email,
+        name: name || "",
+        password: passwordHash,
+        role: "client",
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        blocked: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
-    const safe = { ...user };
-    delete (safe as any).passwordHash;
-    return NextResponse.json(safe, { status: 201 });
+    return NextResponse.json(user, { status: 201 });
   } catch (error) {
     console.error("POST /api/admin/users error:", error);
     return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
@@ -100,7 +108,7 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
-    if (!isAdmin(req)) {
+    if (!(await isAdmin(req))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -109,25 +117,33 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Missing id" }, { status: 400 });
     }
 
-    const db = await readDB();
-    db.users = db.users || [];
-    const idx = db.users.findIndex((u: any) => u.id === id);
-    if (idx === -1) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    const userId = Number(id);
+    if (Number.isNaN(userId)) {
+      return NextResponse.json({ error: "Invalid id" }, { status: 400 });
     }
 
-    if (email) db.users[idx].email = email;
-    if (name) db.users[idx].name = name;
-    if (password) db.users[idx].passwordHash = await bcrypt.hash(password, 10);
-    if (role) db.users[idx].role = role;
-    if (typeof blocked === 'boolean') db.users[idx].blocked = blocked;
-    db.users[idx].updatedAt = new Date().toISOString();
+    const data: any = {};
+    if (email) data.email = email;
+    if (name) data.name = name;
+    if (role) data.role = role;
+    if (typeof blocked === 'boolean') data.blocked = blocked;
+    if (password) data.password = await bcrypt.hash(password, 10);
 
-    await writeDB(db);
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        blocked: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
-    const safe = { ...db.users[idx] };
-    delete (safe as any).passwordHash;
-    return NextResponse.json(safe);
+    return NextResponse.json(updated);
   } catch (error) {
     console.error("PUT /api/admin/users error:", error);
     return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
@@ -146,17 +162,25 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Missing id" }, { status: 400 });
     }
 
-    const db = await readDB();
-    db.users = db.users || [];
-    const idx = db.users.findIndex((u: any) => u.id === id);
-    if (idx === -1) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    const userId = Number(id);
+    if (Number.isNaN(userId)) {
+      return NextResponse.json({ error: "Invalid id" }, { status: 400 });
     }
 
-    const removed = db.users.splice(idx, 1);
-    await writeDB(db);
+    const removed = await prisma.user.delete({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        blocked: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
-    return NextResponse.json({ ok: true, removed: removed[0] });
+    return NextResponse.json({ ok: true, removed });
   } catch (error) {
     console.error("DELETE /api/admin/users error:", error);
     return NextResponse.json({ error: "Failed to delete user" }, { status: 500 });

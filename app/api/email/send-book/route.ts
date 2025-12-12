@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { readDB } from '@/utils/fileDb';
-import fs from 'fs';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
+import { existsSync } from 'fs';
+import { join } from 'path';
 
 // Configuration pour envoyer les PDFs par email
 // Note: Pour production, utilisez Resend ou SendGrid
@@ -9,7 +9,7 @@ import path from 'path';
 
 export async function POST(req: Request) {
   try {
-    const { email, bookIds, userEmail, transactionId } = await req.json();
+    const { email, bookIds, userEmail, transactionId, location } = await req.json();
 
     if (!email || !bookIds || !Array.isArray(bookIds) || bookIds.length === 0) {
       return NextResponse.json(
@@ -18,12 +18,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const db = await readDB();
-    
-    // Récupérer les livres demandés
-    const books = (db.books || []).filter((b: any) => 
-      bookIds.includes(b.id) && b.eBook && b.pdfFile
-    );
+    const numericIds = bookIds.map((b: any) => Number(b)).filter((n: number) => !Number.isNaN(n));
+    const books = await prisma.book.findMany({ where: { id: { in: numericIds } } });
 
     if (books.length === 0) {
       console.warn('[SendBook] No eBooks with PDF found for:', bookIds);
@@ -31,20 +27,63 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, message: 'No eBooks to send' });
     }
 
-    console.log('[SendBook] Sending PDFs to:', email, 'Books:', books.length);
+    console.log('[SendBook] Preparing delivery to:', email, 'Books:', books.length);
 
     // Pour développement: afficher les infos
     console.log('[SendBook] Email should be sent to:', email);
-    console.log('[SendBook] Books to send:', books.map((b: any) => b.title));
+    console.log('[SendBook] Books to deliver:', books.map((b: any) => b.title));
     console.log('[SendBook] Transaction:', transactionId);
-    
-    // TODO: Implémenter avec Resend ou SendGrid en production
-    // Pour l'instant, on log simplement que le paiement est confirmé
-    
-    return NextResponse.json({ 
-      ok: true, 
-      message: 'Payment confirmed - eBooks ready for download',
-      sent: books.length,
+    if (location?.lat && location?.lon) {
+      console.log('[SendBook] Client location:', location);
+    }
+    // Construire les liens de téléchargement (si PDF dispo dans public/pdfs/<id>.pdf)
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const deliveries = books.map((b: any) => {
+      const pdfPath = join(process.cwd(), 'public', 'pdfs', `${b.id}.pdf`);
+      const hasPdf = existsSync(pdfPath);
+      const downloadUrl = hasPdf
+        ? `${baseUrl}/api/pdfs/download?bookId=${encodeURIComponent(b.id)}`
+        : null;
+      return {
+        bookId: b.id,
+        title: b.title,
+        hasPdf,
+        downloadUrl,
+      };
+    });
+
+    // Calculer une ETA basique (si localisation fournie et pas de PDF)
+    let etaMinutes: number | null = null;
+    const anyPhysical = deliveries.some((d: any) => !d.hasPdf);
+    if (anyPhysical) {
+      // Heuristique simple: 30 min intra-ville, 120 min hors-ville
+      const { lat, lon } = location || {};
+      // Coordonnées approximatives de Dakar centre
+      const dakar = { lat: 14.6937, lon: -17.4441 };
+      if (typeof lat === 'number' && typeof lon === 'number') {
+        // Distance approximative via formule haversine simplifiée
+        const toRad = (v: number) => (v * Math.PI) / 180;
+        const R = 6371; // km
+        const dLat = toRad((lat as number) - dakar.lat);
+        const dLon = toRad((lon as number) - dakar.lon);
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(dakar.lat)) * Math.cos(toRad(lat as number)) * Math.sin(dLon / 2) ** 2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distKm = R * c;
+        etaMinutes = distKm <= 10 ? 30 : distKm <= 50 ? 90 : 180;
+      } else {
+        etaMinutes = 120;
+      }
+    }
+
+    // TODO: Intégrer un service email (Resend/SendGrid) en PROD
+    // Réponse avec liens pour que le frontend envoie l'email ou affiche
+    return NextResponse.json({
+      ok: true,
+      message: anyPhysical
+        ? 'Payment confirmed - delivery ETA provided'
+        : 'Payment confirmed - eBooks ready for download',
+      deliveries,
+      etaMinutes,
       note: 'In production, implement email service (Resend/SendGrid)'
     });
 

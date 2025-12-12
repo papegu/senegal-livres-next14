@@ -26,7 +26,11 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('[Users GET] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch users' },
+      { 
+        error: 'Failed to fetch users',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        message: 'Database may not be initialized. Run: npx prisma migrate dev'
+      },
       { status: 500 }
     );
   }

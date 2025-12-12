@@ -1,4 +1,4 @@
-import { readDB, writeDB } from "@/utils/fileDb";
+import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/utils/jwt";
 import { cookies } from "next/headers";
 
@@ -25,11 +25,15 @@ export async function GET(req: Request) {
       return Response.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    const db = await readDB();
+    const userId = Number(payload.sub);
+    if (Number.isNaN(userId)) {
+      return Response.json({ error: "Invalid user" }, { status: 400 });
+    }
 
-    const purchases = (db.purchases || []).filter(
-      (p: Purchase) => p.userId === payload.sub
-    );
+    const purchases = await prisma.purchase.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
 
     return Response.json({ purchases });
   } catch (error) {
@@ -62,35 +66,39 @@ export async function POST(req: Request) {
       return Response.json({ error: "Missing transactionId or amount" }, { status: 400 });
     }
 
-    const db = await readDB();
-    const purchaseId = `purchase_${Date.now()}`;
-
-    const purchase: Purchase = {
-      id: purchaseId,
-      userId: payload.sub,
-      bookIds,
-      transactionId,
-      amount,
-      date: new Date().toISOString(),
-    };
-
-    if (!db.purchases) {
-      db.purchases = [];
+    const userId = Number(payload.sub);
+    if (Number.isNaN(userId)) {
+      return Response.json({ error: "Invalid user" }, { status: 400 });
     }
 
-    db.purchases.push(purchase);
+    const txId = transactionId ? Number(transactionId) : null;
 
-    // Clear user's cart after successful purchase
-    if (payload.sub) {
-      const user = (db.users || []).find((u: any) => u.id === payload.sub);
-      if (user) {
-        user.cart = [];
+    // Create one row per book
+    const created = await prisma.$transaction(async () => {
+      // clear cart
+      await prisma.cartitem.deleteMany({ where: { userId } }).catch(() => null);
+
+      const results: { id: number }[] = [];
+      for (const bId of bookIds) {
+        const bookIdInt = Number(bId);
+        if (Number.isNaN(bookIdInt)) continue;
+
+        const p = await prisma.purchase.create({
+          data: {
+            uuid: `purchase_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
+            userId,
+            bookId: bookIdInt,
+            transactionId: txId || undefined,
+            amount: Math.round(Number(amount) || 0),
+            lastDownload: null,
+          },
+        });
+        results.push(p);
       }
-    }
+      return results;
+    });
 
-    await writeDB(db);
-
-    return Response.json({ ok: true, purchase });
+    return Response.json({ ok: true, purchases: created });
   } catch (error) {
     console.error("POST /api/purchases error:", error);
     return Response.json({ error: "Failed to create purchase" }, { status: 500 });

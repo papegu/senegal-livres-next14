@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { readDB, writeDB } from "@/utils/fileDb";
 import { verifyJwt } from "@/utils/jwt";
 import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
@@ -17,14 +17,19 @@ export async function GET() {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    const db = await readDB();
-    const user = (db.users || []).find((u: any) => u.id === payload.sub);
+    const userId = Number(payload.sub);
+    if (Number.isNaN(userId)) {
+      return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
+    }
 
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const cart = user.cart || [];
+    const cartItems = await prisma.cartitem.findMany({ where: { userId } });
+    const cart = cartItems.map((c: { bookId: number }) => c.bookId);
+
     return NextResponse.json({ cart, userId: user.id });
   } catch (error) {
     return NextResponse.json(
@@ -58,28 +63,39 @@ export async function POST(req: Request) {
       );
     }
 
-    const db = await readDB();
-    const user = (db.users || []).find((u: any) => u.id === payload.sub);
+    const userId = Number(payload.sub);
+    if (Number.isNaN(userId)) {
+      return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
+    }
 
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (!user.cart) user.cart = [];
-
-    if (action === "add") {
-      if (!user.cart.includes(bookId)) {
-        user.cart.push(bookId);
-      }
-    } else if (action === "remove") {
-      user.cart = user.cart.filter((id: string) => id !== bookId);
+    const bookIdInt = Number(bookId);
+    if (Number.isNaN(bookIdInt)) {
+      return NextResponse.json({ error: "Invalid bookId" }, { status: 400 });
     }
 
-    await writeDB(db);
+    if (action === "add") {
+      await prisma.cartitem.upsert({
+        where: { userId_bookId: { userId, bookId: bookIdInt } },
+        update: { quantity: 1 },
+        create: { userId, bookId: bookIdInt, quantity: 1 },
+      });
+    } else if (action === "remove") {
+      await prisma.cartitem.delete({
+        where: { userId_bookId: { userId, bookId: bookIdInt } },
+      }).catch(() => null);
+    }
+
+    const cartItems = await prisma.cartitem.findMany({ where: { userId } });
+    const cart = cartItems.map((c: { bookId: number }) => c.bookId);
 
     return NextResponse.json({
       ok: true,
-      cart: user.cart,
+      cart,
       message: `Book ${action}ed to cart`,
     });
   } catch (error) {

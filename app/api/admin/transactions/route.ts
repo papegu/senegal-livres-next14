@@ -1,5 +1,5 @@
-import { readDB, writeDB } from "@/utils/fileDb";
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/utils/jwt";
 import { getCookie } from "@/utils/cookieParser";
 
@@ -37,10 +37,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const db = await readDB();
-    const transactions = (db.transactions || []).sort((a: any, b: any) => 
-      new Date(b.createdAt || b.date || 0).getTime() - new Date(a.createdAt || a.date || 0).getTime()
-    );
+    const transactions = await prisma.transaction.findMany({ orderBy: { createdAt: "desc" } });
 
     return NextResponse.json({ transactions });
   } catch (error) {
@@ -60,18 +57,17 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Missing id or status" }, { status: 400 });
     }
 
-    const db = await readDB();
-    db.transactions = db.transactions || [];
-    const idx = db.transactions.findIndex((t: any) => t.id === id);
-    if (idx === -1) {
+    const whereClause = Number.isNaN(Number(id)) ? { uuid: id } : { id: Number(id) };
+    const tx = await prisma.transaction.update({
+      where: whereClause,
+      data: { status },
+    }).catch(() => null);
+
+    if (!tx) {
       return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
     }
 
-    db.transactions[idx].status = status;
-    db.transactions[idx].updatedAt = new Date().toISOString();
-    await writeDB(db);
-
-    return NextResponse.json({ ok: true, transaction: db.transactions[idx] });
+    return NextResponse.json({ ok: true, transaction: tx });
   } catch (error) {
     console.error("PUT /api/admin/transactions error:", error);
     return NextResponse.json({ error: "Failed to update transaction" }, { status: 500 });
@@ -89,16 +85,13 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Missing transaction id" }, { status: 400 });
     }
 
-    const db = await readDB();
-    db.transactions = db.transactions || [];
-    const initialLength = db.transactions.length;
-    db.transactions = db.transactions.filter((t: any) => t.id !== id);
+    const deleted = await prisma.transaction.delete({
+      where: Number.isNaN(Number(id)) ? { uuid: id } : { id: Number(id) },
+    }).catch(() => null);
 
-    if (db.transactions.length === initialLength) {
+    if (!deleted) {
       return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
     }
-
-    await writeDB(db);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

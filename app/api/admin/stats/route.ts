@@ -1,4 +1,4 @@
-import { readDB } from "@/utils/fileDb";
+import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/utils/jwt";
 import { getCookie } from "@/utils/cookieParser";
 
@@ -36,10 +36,10 @@ export async function GET(req: Request) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const db = await readDB();
-
-    const transactions = db.transactions || [];
-    const books = db.books || [];
+    const [transactions, booksCount] = await Promise.all([
+      prisma.transaction.findMany(),
+      prisma.book.count(),
+    ]);
 
     const stats = {
       successTransactions: transactions.filter((t: any) => t.status === "validated").length,
@@ -48,7 +48,7 @@ export async function GET(req: Request) {
       totalRevenue: transactions
         .filter((t: any) => t.status === "validated")
         .reduce((sum: number, t: any) => sum + (t.amount || 0), 0),
-      totalBooks: books.length,
+      totalBooks: booksCount,
     };
 
     return Response.json(stats);

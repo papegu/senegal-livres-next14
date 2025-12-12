@@ -8,9 +8,7 @@
 -- Privilèges: ALL ON *.*
 -- ============================================================================
 
--- 1. Créer l'utilisateur MySQL
--- ============================================================================
-CREATE USER IF NOT EXISTS 'papeabdoulaye'@'localhost' IDENTIFIED BY 'pape1982';
+CREATE USER IF NOT EXISTS 'papeabdoulaye'@'localhost' IDENTIFIED WITH mysql_native_password BY 'pape1982';
 
 -- 2. Attribuer tous les privilèges
 -- ============================================================================
@@ -21,8 +19,17 @@ GRANT ALL PRIVILEGES ON *.* TO 'papeabdoulaye'@'localhost' WITH GRANT OPTION;
 GRANT SUPER ON *.* TO 'papeabdoulaye'@'localhost';
 GRANT CREATE USER ON *.* TO 'papeabdoulaye'@'localhost';
 
--- 4. Rafraîchir les privilèges
--- ============================================================================
+FLUSH PRIVILEGES;
+
+CREATE USER IF NOT EXISTS 'admin_root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'pape@@@@';
+GRANT ALL PRIVILEGES ON *.* TO 'admin_root'@'localhost' WITH GRANT OPTION;
+GRANT SUPER, CREATE USER ON *.* TO 'admin_root'@'localhost';
+
+
+FLUSH PRIVILEGES;
+
+-- Ensure local root uses mysql_native_password with requested password
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'pape1982';
 FLUSH PRIVILEGES;
 
 -- 5. Vérifier la création

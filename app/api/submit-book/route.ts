@@ -2,7 +2,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { readDB, writeDB } from '@/utils/fileDb';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
@@ -51,26 +51,20 @@ export async function POST(req: Request) {
     await writeFile(filepath, buffer);
 
     // Create submission record in database
-    const db = await readDB();
-    db.submissions = db.submissions || [];
-
-    const submission = {
-      id: uuidv4(),
-      title,
-      author,
-      price: Number(price),
-      description,
-      category,
-      eBook,
-      filename,
-      pdfPath: `/submissions/${filename}`,
-      status: 'pending', // pending, approved, rejected
-      submittedAt: new Date().toISOString(),
-      submitterEmail: 'anonymous', // Could add user email if authenticated
-    };
-
-    db.submissions.push(submission);
-    await writeDB(db);
+    const submission = await prisma.submission.create({
+      data: {
+        uuid: uuidv4(),
+        userId: 0, // anonymous submitter placeholder
+        title,
+        author,
+        description,
+        category,
+        pdfFile: `/submissions/${filename}`,
+        pdfFileName: filename,
+        status: 'pending',
+        reviewNotes: `price=${price || ''}; ebook=${eBook}`,
+      },
+    });
 
     return NextResponse.json(
       { ok: true, submission, message: 'Book submitted successfully for review' },

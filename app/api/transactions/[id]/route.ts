@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readDB } from '@/utils/fileDb';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,12 +11,17 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       return NextResponse.json({ error: 'ID required' }, { status: 400 });
     }
 
-    const db = await readDB();
-    
-    // Chercher la transaction par orderId ou id
-    const transaction = db.transactions?.find(
-      (t: any) => t.orderId === id || t.id === id
-    );
+    const numericId = Number(id);
+
+    const transaction = await prisma.transaction.findFirst({
+      where: {
+        OR: [
+          { orderId: id },
+          { uuid: id },
+          Number.isNaN(numericId) ? undefined : { id: numericId },
+        ].filter(Boolean) as any,
+      },
+    });
 
     if (!transaction) {
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });

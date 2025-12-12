@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { readDB } from "../../../../utils/fileDb";
-import { verifyJwt } from "../../../../utils/jwt";
-import { getCookie } from "../../../../utils/cookieParser";
+import { prisma } from "@/lib/prisma";
+import { verifyJwt } from "@/utils/jwt";
+import { getCookie } from "@/utils/cookieParser";
 
 export async function GET(req: Request) {
   try {
@@ -19,15 +19,27 @@ export async function GET(req: Request) {
       return NextResponse.json({ ok: false }, { status: 401 });
     }
 
-    const db = await readDB();
-    const user = (db.users || []).find((u: any) => u.id === payload.sub);
+    const userId = Number(payload.sub);
+    if (Number.isNaN(userId)) {
+      console.log("[/api/auth/me] Invalid user id in token:", payload.sub);
+      return NextResponse.json({ ok: false }, { status: 400 });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       console.log("[/api/auth/me] User not found with id:", payload.sub);
       return NextResponse.json({ ok: false }, { status: 404 });
     }
 
-    const safe = { ...user };
-    delete (safe as any).passwordHash;
+    const safe = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      blocked: user.blocked,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
 
     return NextResponse.json({ ok: true, user: safe });
   } catch (err) {

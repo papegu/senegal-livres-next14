@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB } from '@/utils/fileDb';
+import { prisma } from '@/lib/prisma';
 import { v4 as uuid } from 'uuid';
 
 export const dynamic = 'force-dynamic';
@@ -41,23 +41,18 @@ export async function POST(req: Request) {
     const orderId = uuid();
     const transactionId = uuid();
 
-    // Créer la transaction dans la base de données
-    const db = await readDB();
-    db.transactions = db.transactions || [];
-
-    const transaction = {
-      id: transactionId,
-      orderId,
-      userId: userId || null,
-      bookIds: bookIds || [],
-      amount: Math.round(Number(amount)),
-      paymentMethod: 'paydunya',
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-
-    db.transactions.push(transaction);
-    await writeDB(db);
+    // Créer la transaction dans la base de données (MySQL via Prisma)
+    await prisma.transaction.create({
+      data: {
+        uuid: transactionId,
+        orderId,
+        userId: userId ? Number(userId) : null,
+        bookIds: Array.isArray(bookIds) ? JSON.stringify(bookIds) : "",
+        amount: Math.round(Number(amount)),
+        paymentMethod: 'paydunya',
+        status: 'pending',
+      },
+    });
 
     // Construire le payload PayDunya
     // Base URL de l'application (prod: https://www.senegal-livres.sn)
@@ -127,11 +122,31 @@ export async function POST(req: Request) {
       });
     }
 
-    const response = await fetch(`${apiBaseUrl}/checkout-invoice/create`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${apiBaseUrl}/checkout-invoice/create`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+    } catch (err: any) {
+      // Network/DNS failures: fall back to mock if allowed
+      const isNetworkError = err?.code === 'ENOTFOUND' || err?.cause?.code === 'ENOTFOUND' || /fetch failed/i.test(String(err));
+      if (USE_MOCK || isNetworkError) {
+        console.warn('[PayDunya] Network error, using MOCK fallback:', err?.message || err);
+        const baseUrlMock = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const mockRedirectUrl = `${baseUrlMock}/payment-paydunya?token=${transactionId}&orderId=${orderId}&amount=${amount}`;
+        return NextResponse.json({
+          success: true,
+          redirect_url: mockRedirectUrl,
+          invoice_token: transactionId,
+          orderId,
+          transactionId,
+          mockMode: true,
+        });
+      }
+      throw err;
+    }
 
     const data = await response.json();
     

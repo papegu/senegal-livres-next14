@@ -1,4 +1,4 @@
-import { readDB, writeDB } from "@/utils/fileDb";
+import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { verifyJwt } from "@/utils/jwt";
 import { getCookie } from "@/utils/cookieParser";
@@ -31,8 +31,7 @@ async function isAdmin(req: Request): Promise<boolean> {
 
 export async function GET(req: Request) {
   try {
-    const db = await readDB();
-    const books = db.books || [];
+    const books = await prisma.book.findMany({ orderBy: { createdAt: "desc" } });
     return Response.json({ ok: true, books });
   } catch (error) {
     console.error("GET /api/admin/books error:", error);
@@ -52,23 +51,20 @@ export async function POST(req: Request) {
       return Response.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const db = await readDB();
-    const newBook = {
-      id: uuidv4(),
-      title,
-      author,
-      price: Number(price),
-      description: description || "",
-      coverImage,
-      status: status || "available",
-      eBook: eBook === true,
-    };
+    const book = await prisma.book.create({
+      data: {
+        uuid: uuidv4(),
+        title,
+        author,
+        price: Number(price),
+        description: description || "",
+        coverImage,
+        status: status || "available",
+        eBook: eBook === true,
+      },
+    });
 
-    db.books = db.books || [];
-    db.books.push(newBook);
-    await writeDB(db);
-
-    return Response.json({ ok: true, book: newBook }, { status: 201 });
+    return Response.json({ ok: true, book }, { status: 201 });
   } catch (error) {
     console.error("POST /api/admin/books error:", error);
     return Response.json({ error: "Failed to create book" }, { status: 500 });
@@ -87,23 +83,22 @@ export async function PUT(req: Request) {
       return Response.json({ error: "Missing bookId" }, { status: 400 });
     }
 
-    const db = await readDB();
-    const book = (db.books || []).find((b: any) => b.id === bookId);
+    const book = await prisma.book.update({
+      where: Number.isNaN(Number(bookId)) ? { uuid: bookId } : { id: Number(bookId) },
+      data: {
+        title,
+        author,
+        price: price !== undefined ? Number(price) : undefined,
+        description,
+        coverImage,
+        status,
+        eBook: typeof eBook === 'boolean' ? eBook : undefined,
+      },
+    }).catch(() => null);
 
     if (!book) {
       return Response.json({ error: "Book not found" }, { status: 404 });
     }
-
-    // Update only provided fields
-    if (title !== undefined) book.title = title;
-    if (author !== undefined) book.author = author;
-    if (price !== undefined) book.price = Number(price);
-    if (description !== undefined) book.description = description;
-    if (coverImage !== undefined) book.coverImage = coverImage;
-    if (status !== undefined) book.status = status;
-    if (typeof eBook === 'boolean') book.eBook = eBook;
-
-    await writeDB(db);
 
     return Response.json({ ok: true, book });
   } catch (error) {
@@ -125,15 +120,13 @@ export async function DELETE(req: Request) {
       return Response.json({ error: "Missing book id" }, { status: 400 });
     }
 
-    const db = await readDB();
-    const initialLength = (db.books || []).length;
-    db.books = (db.books || []).filter((b: any) => b.id !== bookId);
+    const deleted = await prisma.book.delete({
+      where: Number.isNaN(Number(bookId)) ? { uuid: bookId } : { id: Number(bookId) },
+    }).catch(() => null);
 
-    if (db.books.length === initialLength) {
+    if (!deleted) {
       return Response.json({ error: "Book not found" }, { status: 404 });
     }
-
-    await writeDB(db);
 
     return Response.json({ ok: true });
   } catch (error) {

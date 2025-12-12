@@ -1,11 +1,14 @@
-import { readDB } from "../../../utils/fileDb";
+import { prisma } from "@/lib/prisma";
 import CheckoutForm from "./CheckoutForm";
 
 type Params = { params: { id: string } };
 
 export default async function BookPage({ params }: Params) {
-  const db = await readDB();
-  const book = (db.books || []).find((b: any) => b.id === params.id);
+  const whereClause = Number.isNaN(Number(params.id))
+    ? { uuid: params.id }
+    : { id: Number(params.id) };
+
+  const book = await prisma.book.findUnique({ where: whereClause });
 
   if (!book) {
     return (
@@ -27,7 +30,7 @@ export default async function BookPage({ params }: Params) {
             <p className="mt-4 font-semibold text-[#128A41]">{book.price} FCFA</p>
             <p className="mt-4">{book.description || "Aucune description."}</p>
 
-            <CheckoutForm bookId={book.id} price={book.price} />
+            <CheckoutForm bookId={String(book.id)} price={book.price} />
           </div>
         </div>
       </div>
