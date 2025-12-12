@@ -5,105 +5,18 @@ import { requireAdmin } from '@/utils/AdminAuth';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * GET - Liste tous les utilisateurs (admin uniquement)
- */
-export async function GET(req: Request) {
-  try {
-    const authErr = requireAdmin(req);
-    if (authErr) return authErr;
-
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        createdAt: true,
-      },
-    });
-
-    return NextResponse.json(users);
-  } catch (error) {
-    console.error('[Users GET] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    );
-  }
+interface RouteParams {
+  params: {
+    id: string;
+  };
 }
 
 /**
- * POST - Crée un nouvel utilisateur (inscription publique)
+ * GET - Récupère un utilisateur par ID
  */
-export async function POST(req: Request) {
+export async function GET(req: Request, { params }: RouteParams) {
   try {
-    const body = await req.json();
-    const { name, email, password } = body;
-
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      );
-    }
-
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
-        { status: 400 }
-      );
-    }
-
-    // Vérifier que l'email n'existe pas déjà
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'Email already in use' },
-        { status: 400 }
-      );
-    }
-
-    // Hasher le mot de passe
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Créer l'utilisateur
-    const user = await prisma.user.create({
-      data: {
-        name: name || '',
-        email,
-        password: hashedPassword,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        createdAt: true,
-      },
-    });
-
-    return NextResponse.json(user, { status: 201 });
-  } catch (error) {
-    console.error('[Users POST] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create user' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * PUT - Met à jour un utilisateur (admin uniquement)
- */
-export async function PUT(req: Request) {
-  try {
-    const authErr = requireAdmin(req);
-    if (authErr) return authErr;
-
-    const body = await req.json();
-    const { id, name, email, password } = body;
+    const { id } = params;
 
     if (!id) {
       return NextResponse.json(
@@ -111,6 +24,53 @@ export async function PUT(req: Request) {
         { status: 400 }
       );
     }
+
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(id) },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(user);
+  } catch (error) {
+    console.error('[User GET] Error:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch user' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PUT - Met à jour un utilisateur par ID (admin uniquement)
+ */
+export async function PUT(req: Request, { params }: RouteParams) {
+  try {
+    const authErr = requireAdmin(req);
+    if (authErr) return authErr;
+
+    const { id } = params;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'User ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const body = await req.json();
+    const { name, email, password } = body;
 
     const updateData: any = {};
 
@@ -128,7 +88,7 @@ export async function PUT(req: Request) {
 
     // Mettre à jour l'utilisateur
     const user = await prisma.user.update({
-      where: { id },
+      where: { id: parseInt(id) },
       data: updateData,
       select: {
         id: true,
@@ -140,7 +100,7 @@ export async function PUT(req: Request) {
 
     return NextResponse.json(user);
   } catch (error: any) {
-    console.error('[Users PUT] Error:', error);
+    console.error('[User PUT] Error:', error);
 
     if (error.code === 'P2025') {
       return NextResponse.json(
@@ -164,15 +124,14 @@ export async function PUT(req: Request) {
 }
 
 /**
- * DELETE - Supprime un utilisateur (admin uniquement)
+ * DELETE - Supprime un utilisateur par ID (admin uniquement)
  */
-export async function DELETE(req: Request) {
+export async function DELETE(req: Request, { params }: RouteParams) {
   try {
     const authErr = requireAdmin(req);
     if (authErr) return authErr;
 
-    const body = await req.json();
-    const { id } = body;
+    const { id } = params;
 
     if (!id) {
       return NextResponse.json(
@@ -182,16 +141,22 @@ export async function DELETE(req: Request) {
     }
 
     // Supprimer l'utilisateur
-    await prisma.user.delete({
-      where: { id },
+    const user = await prisma.user.delete({
+      where: { id: parseInt(id) },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+      },
     });
 
     return NextResponse.json(
-      { message: 'User deleted successfully' },
+      { message: 'User deleted successfully', user },
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('[Users DELETE] Error:', error);
+    console.error('[User DELETE] Error:', error);
 
     if (error.code === 'P2025') {
       return NextResponse.json(

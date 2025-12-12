@@ -142,6 +142,15 @@ export default function AdminDashboard() {
                 <p className="text-gray-600 mb-4">Review book submissions from users</p>
                 <span className="text-amber-600 font-semibold">View Details →</span>
               </Link>
+
+              <Link
+                href="/admin/database"
+                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-2 border-purple-400"
+              >
+                <h2 className="text-2xl font-bold text-purple-600 mb-2">🗄️ Base de Données</h2>
+                <p className="text-gray-600 mb-4">Administration et monitoring MySQL</p>
+                <span className="text-purple-600 font-semibold">View Details →</span>
+              </Link>
             </div>
           </>
         )}
