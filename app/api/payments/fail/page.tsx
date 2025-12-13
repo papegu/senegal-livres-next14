@@ -1,5 +1,6 @@
 // @ts-ignore - These pages will be used with Wave API webhooks
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default function PaymentFail() {
   return (
