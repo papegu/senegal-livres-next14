@@ -9,6 +9,13 @@ import { verifyJwt } from "@/utils/jwt";
 import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const { amount, phone } = await req.json();
 

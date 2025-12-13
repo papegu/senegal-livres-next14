@@ -16,6 +16,13 @@ interface Purchase {
 }
 
 export async function GET(req: Request) {
+  if (!prisma) {
+    return Response.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value;
@@ -47,6 +54,13 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  if (!prisma) {
+    return Response.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value;

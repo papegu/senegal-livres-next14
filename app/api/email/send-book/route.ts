@@ -12,6 +12,13 @@ import { join } from 'path';
 // npm install resend @sendgrid/mail
 
 export async function POST(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const { email, bookIds, userEmail, transactionId, location } = await req.json();
 

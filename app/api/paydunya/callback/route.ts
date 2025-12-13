@@ -18,6 +18,10 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: Request) {
+  if (!prisma) {
+    return new Response('OK', { status: 200, headers: corsHeaders });
+  }
+
   try {
     // Lire le JSON envoyé par PayDunya
     const payload = await req.json();

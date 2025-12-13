@@ -8,6 +8,13 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "../../../utils/AdminAuth";
 
 export async function GET(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const authErr = requireAdmin(req);
     if (authErr) return authErr;
@@ -20,6 +27,13 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const body = await req.json();
     const { userId, bookId, amount, paymentMethod, bookIds } = body as any;
@@ -74,6 +88,13 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const authErr = requireAdmin(req);
     if (authErr) return authErr;
@@ -90,6 +111,13 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const authErr = requireAdmin(req);
     if (authErr) return authErr;

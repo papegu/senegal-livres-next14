@@ -17,6 +17,13 @@ interface RouteParams {
  * GET - Récupère un utilisateur par ID
  */
 export async function GET(req: Request, { params }: RouteParams) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const { id } = params;
 
@@ -58,6 +65,13 @@ export async function GET(req: Request, { params }: RouteParams) {
  * PUT - Met à jour un utilisateur par ID (admin uniquement)
  */
 export async function PUT(req: Request, { params }: RouteParams) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const authErr = requireAdmin(req);
     if (authErr) return authErr;
@@ -129,6 +143,13 @@ export async function PUT(req: Request, { params }: RouteParams) {
  * DELETE - Supprime un utilisateur par ID (admin uniquement)
  */
 export async function DELETE(req: Request, { params }: RouteParams) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const authErr = requireAdmin(req);
     if (authErr) return authErr;

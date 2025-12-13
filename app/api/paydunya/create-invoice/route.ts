@@ -7,6 +7,13 @@ import { prisma } from '@/lib/prisma';
 import { v4 as uuid } from 'uuid';
 
 export async function POST(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const body = await req.json();
     const { amount, description, customerEmail, userId, bookIds } = body;
