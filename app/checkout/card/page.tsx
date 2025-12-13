@@ -27,7 +27,7 @@ export default function CardCheckoutPage() {
 
   const fetchCart = async () => {
     try {
-      const res = await fetch('/api/cart');
+      const res = await fetch('/api/cart', { credentials: 'include' });
       if (!res.ok) {
         if (res.status === 401) {
           router.push('/auth/login');
