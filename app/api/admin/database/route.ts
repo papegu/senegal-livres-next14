@@ -6,10 +6,6 @@ import { cookies } from "next/headers";
 import { verifyJwt } from "@/utils/jwt";
 import { prisma } from "@/lib/prisma";
 
-// ⛔️ Empêcher toute exécution DB pendant le build
-if (process.env.NEXT_PHASE === "phase-production-build") {
-  throw new Error("Skipping DB execution during build");
-}
 
 // Vérifier les privilèges admin via JWT cookie
 const requireAdminAuth = async () => {
