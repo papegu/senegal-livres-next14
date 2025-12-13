@@ -40,6 +40,13 @@ export async function POST(req: Request) {
       }
 
       // Generate JWT token
+      if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) {
+        console.error("[auth/login] Missing or weak JWT_SECRET in environment");
+        return NextResponse.json(
+          { error: "Server configuration error: JWT secret missing" },
+          { status: 500 }
+        );
+      }
       const token = await signJwt({
         sub: String(user.id),
         email: user.email,
