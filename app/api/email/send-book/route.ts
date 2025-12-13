@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const runtime = "nodejs";
+export const fetchCache = "force-no-store";
+export const dynamicParams = true;
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -13,6 +15,11 @@ import { join } from 'path';
 
 export async function POST(req: Request) {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      return NextResponse.json({ message: 'Database not available' }, { status: 503 });
+    }
+
     const { email, bookIds, userEmail, transactionId, location } = await req.json();
 
     if (!email || !bookIds || !Array.isArray(bookIds) || bookIds.length === 0) {
