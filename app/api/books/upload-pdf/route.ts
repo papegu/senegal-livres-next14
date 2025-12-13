@@ -12,7 +12,7 @@ import path from 'path';
 export async function POST(req: Request) {
   if (!prisma) {
     return NextResponse.json(
-      { message: "Database not available" },
+      { error: "Database not available" },
       { status: 503 }
     );
   }

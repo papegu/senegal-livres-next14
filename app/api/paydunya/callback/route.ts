@@ -19,7 +19,8 @@ export async function OPTIONS() {
 
 export async function POST(req: Request) {
   if (!prisma) {
-    return new Response('OK', { status: 200, headers: corsHeaders });
+    // Return 503 to indicate service unavailable - PayDunya will retry
+    return new Response('Service Unavailable', { status: 503, headers: corsHeaders });
   }
 
   try {

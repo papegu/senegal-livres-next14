@@ -14,8 +14,11 @@ function createPrismaClient(): PrismaClient | null {
   });
 }
 
+// Check SKIP_DB_CHECK before using global instance
 export const prisma: PrismaClient | null =
-  globalForPrisma.prisma ?? createPrismaClient();
+  process.env.SKIP_DB_CHECK === "true"
+    ? null
+    : globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production" && prisma) {
   globalForPrisma.prisma = prisma;
