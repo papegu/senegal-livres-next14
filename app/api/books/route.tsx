@@ -1,8 +1,8 @@
+// app/api/books/route.ts
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const runtime = "nodejs";
 
-// app/api/books/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { v4 as uuid } from "uuid";
