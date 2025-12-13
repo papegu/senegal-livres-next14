@@ -35,6 +35,13 @@ async function isAdmin(req: Request): Promise<boolean> {
 }
 
 export async function GET(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     if (!(await isAdmin(req))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -50,6 +57,13 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     if (!(await isAdmin(req))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -79,13 +93,14 @@ export async function PUT(req: Request) {
         return NextResponse.json({ error: "Cover image URL required" }, { status: 400 });
       }
 
-      await prisma.$transaction(async () => {
-        await prisma.submission.update({
+      const db = prisma;
+      await db.$transaction(async () => {
+        await db.submission.update({
           where: { id: sub.id },
           data: { status: 'approved', reviewedAt: new Date() },
         });
 
-        await prisma.book.create({
+        await db.book.create({
           data: {
             uuid: uuidv4(),
             title: sub.title,

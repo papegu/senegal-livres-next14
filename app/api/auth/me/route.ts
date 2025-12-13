@@ -8,6 +8,13 @@ import { verifyJwt } from "@/utils/jwt";
 import { getCookie } from "@/utils/cookieParser";
 
 export async function GET(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { ok: false, error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const cookieHeader = req.headers.get("cookie") || "";
 

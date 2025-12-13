@@ -6,6 +6,13 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const { id } = params;
 

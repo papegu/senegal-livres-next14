@@ -57,6 +57,13 @@ async function migrateData() {
   try {
     console.log('🚀 Démarrage de la migration JSON → MySQL...\n');
 
+    if (!prisma) {
+      console.error('❌ Database not available');
+      process.exit(1);
+    }
+
+    const db = prisma;
+
     const dataPath = path.join(process.cwd(), 'data', 'market.json');
     const rawData = fs.readFileSync(dataPath, 'utf-8');
     const data = JSON.parse(rawData);
@@ -73,7 +80,7 @@ async function migrateData() {
 
     for (const user of users) {
       try {
-        const createdUser = await prisma.user.create({
+        const createdUser = await db.user.create({
           data: {
             name: user.name || 'Unknown',
             email: user.email || `user${Math.random()}@example.com`,
@@ -88,7 +95,7 @@ async function migrateData() {
         if (err.code === 'P2002') {
           console.log(`  ⚠️  ${user.email} existe déjà (skipped)`);
           // Récupérer l'ID existant
-          const existing = await prisma.user.findUnique({
+          const existing = await db.user.findUnique({
             where: { email: user.email },
           });
           if (existing) userMap[user.id] = existing.id;
@@ -106,7 +113,7 @@ async function migrateData() {
 
     for (const book of books) {
       try {
-        const createdBook = await prisma.book.create({
+        const createdBook = await db.book.create({
           data: {
             uuid: book.id,
             title: book.title || 'Untitled',
@@ -138,7 +145,7 @@ async function migrateData() {
       try {
         const userId = tx.userId ? userMap[tx.userId] : null;
 
-        const createdTx = await prisma.transaction.create({
+        const createdTx = await db.transaction.create({
           data: {
             uuid: tx.id,
             orderId: tx.orderId || tx.id,
@@ -178,7 +185,7 @@ async function migrateData() {
           continue;
         }
 
-        const createdPurchase = await prisma.purchase.create({
+        const createdPurchase = await db.purchase.create({
           data: {
             uuid: purchase.id,
             userId,
@@ -217,7 +224,7 @@ async function migrateData() {
           continue;
         }
 
-        const createdSubmission = await prisma.submission.create({
+        const createdSubmission = await db.submission.create({
           data: {
             uuid: submission.id,
             userId,
@@ -242,11 +249,11 @@ async function migrateData() {
     console.log('\n✨ Migration terminée avec succès!\n');
 
     // Afficher les statistiques
-    const userCount = await prisma.user.count();
-    const bookCount = await prisma.book.count();
-    const txCount = await prisma.transaction.count();
-    const purchaseCount = await prisma.purchase.count();
-    const submissionCount = await prisma.submission.count();
+    const userCount = await db.user.count();
+    const bookCount = await db.book.count();
+    const txCount = await db.transaction.count();
+    const purchaseCount = await db.purchase.count();
+    const submissionCount = await db.submission.count();
 
     console.log('📊 Statistiques:');
     console.log(`  👥 Users: ${userCount}`);
@@ -258,7 +265,9 @@ async function migrateData() {
     console.error('❌ Erreur de migration:', error);
     process.exit(1);
   } finally {
-    await prisma.$disconnect();
+    if (prisma) {
+      await prisma.$disconnect();
+    }
   }
 }
 

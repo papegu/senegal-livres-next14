@@ -9,6 +9,13 @@ import { verifyJwt } from "@/utils/jwt";
 import { getCookie } from "@/utils/cookieParser";
 
 export async function GET(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const cookieHeader = req.headers.get("cookie") || "";
     const token = getCookie(cookieHeader, "auth_token");
@@ -24,6 +31,13 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const body = await req.json();
     const { email, password, name, role } = body as any;

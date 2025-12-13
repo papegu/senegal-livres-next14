@@ -8,6 +8,13 @@ import { v4 as uuid } from "uuid";
 import { requireAdmin } from "../../../utils/AdminAuth";
 
 export async function GET() {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const books = await prisma.book.findMany({ orderBy: { createdAt: "desc" } });
     return NextResponse.json({ books });
@@ -17,6 +24,13 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   const authErr = requireAdmin(req);
   if (authErr) return authErr;
 
@@ -47,6 +61,13 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   const authErr = requireAdmin(req);
   if (authErr) return authErr;
 
@@ -63,6 +84,13 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   const authErr = requireAdmin(req);
   if (authErr) return authErr;
 

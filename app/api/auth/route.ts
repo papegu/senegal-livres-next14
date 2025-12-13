@@ -10,6 +10,13 @@ import { signJwt } from "@/utils/jwt";
 // POST /api/auth
 // Body: { action: "login" | "register", email, password, name? }
 export async function POST(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const body = await req.json();
     const { action, email, password, name } = body;

@@ -34,6 +34,13 @@ async function isAdmin(req: Request): Promise<boolean> {
 }
 
 export async function GET(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     if (!(await isAdmin(req))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -49,6 +56,13 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     if (!(await isAdmin(req))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -77,6 +91,13 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     if (!(await isAdmin(req))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

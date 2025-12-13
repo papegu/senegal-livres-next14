@@ -16,6 +16,13 @@ interface Purchase {
 }
 
 export async function GET(req: Request) {
+  if (!prisma) {
+    return Response.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value;
@@ -47,6 +54,13 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  if (!prisma) {
+    return Response.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value;
@@ -78,16 +92,17 @@ export async function POST(req: Request) {
     const txId = transactionId ? Number(transactionId) : null;
 
     // Create one row per book
-    const created = await prisma.$transaction(async () => {
+    const db = prisma;
+    const created = await db.$transaction(async () => {
       // clear cart
-      await prisma.cartitem.deleteMany({ where: { userId } }).catch(() => null);
+      await db.cartitem.deleteMany({ where: { userId } }).catch(() => null);
 
       const results: { id: number }[] = [];
       for (const bId of bookIds) {
         const bookIdInt = Number(bId);
         if (Number.isNaN(bookIdInt)) continue;
 
-        const p = await prisma.purchase.create({
+        const p = await db.purchase.create({
           data: {
             uuid: `purchase_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
             userId,

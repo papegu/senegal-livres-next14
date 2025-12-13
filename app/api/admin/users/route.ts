@@ -38,6 +38,11 @@ async function isAdmin(req: Request): Promise<boolean> {
   }
 
   // Confirm admin role in DB
+  if (!prisma) {
+    console.log("[isAdmin] Database not available");
+    return false;
+  }
+
   const user = await prisma.user.findUnique({ where: { id: userId } });
   const result = !!(user && user.role === 'admin');
   console.log("[isAdmin] DB admin check result:", result);
@@ -45,6 +50,13 @@ async function isAdmin(req: Request): Promise<boolean> {
 }
 
 export async function GET(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     if (!(await isAdmin(req))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -71,6 +83,13 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     if (!(await isAdmin(req))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -109,6 +128,13 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     if (!(await isAdmin(req))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -153,6 +179,13 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not available" },
+      { status: 503 }
+    );
+  }
+
   try {
     if (!(await isAdmin(req))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
