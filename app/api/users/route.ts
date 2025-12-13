@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const runtime = "nodejs";
+export const fetchCache = "force-no-store";
+export const dynamicParams = true;
 
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
@@ -10,6 +12,11 @@ import { getCookie } from "@/utils/cookieParser";
 
 export async function GET(req: Request) {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      return NextResponse.json({ error: "Database not available" }, { status: 503 });
+    }
+
     const cookieHeader = req.headers.get("cookie") || "";
     const token = getCookie(cookieHeader, "auth_token");
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -25,6 +32,11 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      return NextResponse.json({ error: "Database not available" }, { status: 503 });
+    }
+
     const body = await req.json();
     const { email, password, name, role } = body as any;
     if (!email || !password) return NextResponse.json({ error: "Missing fields" }, { status: 400 });

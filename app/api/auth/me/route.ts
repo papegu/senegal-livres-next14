@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const runtime = "nodejs";
+export const fetchCache = "force-no-store";
+export const dynamicParams = true;
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -9,6 +11,11 @@ import { getCookie } from "@/utils/cookieParser";
 
 export async function GET(req: Request) {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      return NextResponse.json({ ok: false, error: "Database not available" }, { status: 503 });
+    }
+
     const cookieHeader = req.headers.get("cookie") || "";
 
     const token = getCookie(cookieHeader, 'auth_token');

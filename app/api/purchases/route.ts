@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const runtime = "nodejs";
+export const fetchCache = "force-no-store";
+export const dynamicParams = true;
 
 import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/utils/jwt";
@@ -17,6 +19,11 @@ interface Purchase {
 
 export async function GET(req: Request) {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      return Response.json({ error: "Database not available" }, { status: 503 });
+    }
+
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value;
 
@@ -48,6 +55,11 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      return Response.json({ error: "Database not available" }, { status: 503 });
+    }
+
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value;
 

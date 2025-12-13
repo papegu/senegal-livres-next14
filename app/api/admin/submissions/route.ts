@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const runtime = "nodejs";
+export const fetchCache = "force-no-store";
+export const dynamicParams = true;
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -36,6 +38,11 @@ async function isAdmin(req: Request): Promise<boolean> {
 
 export async function GET(req: Request) {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      return NextResponse.json({ error: "Database not available" }, { status: 503 });
+    }
+
     if (!(await isAdmin(req))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -51,6 +58,11 @@ export async function GET(req: Request) {
 
 export async function PUT(req: Request) {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      return NextResponse.json({ error: "Database not available" }, { status: 503 });
+    }
+
     if (!(await isAdmin(req))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -74,18 +86,21 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Submission not found" }, { status: 404 });
     }
 
+    // Capture prisma in a local variable for use in transaction
+    const db = prisma;
+
     if (action === 'approve') {
       if (!coverImage) {
         return NextResponse.json({ error: "Cover image URL required" }, { status: 400 });
       }
 
-      await prisma.$transaction(async () => {
-        await prisma.submission.update({
+      await db.$transaction(async () => {
+        await db.submission.update({
           where: { id: sub.id },
           data: { status: 'approved', reviewedAt: new Date() },
         });
 
-        await prisma.book.create({
+        await db.book.create({
           data: {
             uuid: uuidv4(),
             title: sub.title,
