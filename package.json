@@ -12,6 +12,7 @@
     "start": "next start",
     "lint": "next lint",
     "seed:market": "node scripts/seed-market.js",
+    "seed:users": "node scripts/seed-users.js",
     "prisma:validate": "prisma validate",
     "postinstall": "prisma generate"
   },
