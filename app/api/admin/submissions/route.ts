@@ -93,13 +93,14 @@ export async function PUT(req: Request) {
         return NextResponse.json({ error: "Cover image URL required" }, { status: 400 });
       }
 
-      await prisma.$transaction(async () => {
-        await prisma.submission.update({
+      const db = prisma;
+      await db.$transaction(async () => {
+        await db.submission.update({
           where: { id: sub.id },
           data: { status: 'approved', reviewedAt: new Date() },
         });
 
-        await prisma.book.create({
+        await db.book.create({
           data: {
             uuid: uuidv4(),
             title: sub.title,
