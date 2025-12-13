@@ -3,9 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider     = "mysql"
-  url          = env("DATABASE_URL")
-  relationMode = "prisma"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
@@ -28,7 +28,7 @@ model book {
   uuid        String   @unique(map: "Book_uuid_key")
   title       String
   author      String
-  description String   @db.LongText
+  description String
   price       Int
   coverImage  String   @default("")
   pdfFile     String   @default("")
@@ -72,12 +72,12 @@ model submission {
   userId      Int
   title       String
   author      String
-  description String    @db.LongText
+  description String
   pdfFile     String    @default("")
   pdfFileName String    @default("")
   category    String    @default("")
   status      String    @default("pending")
-  reviewNotes String    @db.LongText @default("")
+  reviewNotes String    @default("")
   submittedAt DateTime  @default(now())
   reviewedAt  DateTime?
   createdAt   DateTime  @default(now())
@@ -99,7 +99,7 @@ model transaction {
   bookIds              String    @default("")
   description          String    @default("")
   customerEmail        String    @default("")
-  rawPayload           String    @db.LongText @default("")
+  rawPayload           String    @default("")
   paymentConfirmedAt   DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt

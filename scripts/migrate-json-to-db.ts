@@ -13,6 +13,7 @@
 import fs from 'fs';
 import path from 'path';
 import bcrypt from 'bcryptjs';
+// Import compatible avec ts-node/ESM
 import { prisma } from '../lib/prisma';
 
 interface JSONUser {
@@ -55,7 +56,7 @@ interface JSONTransaction {
 
 async function migrateData() {
   try {
-    console.log('🚀 Démarrage de la migration JSON → MySQL...\n');
+    console.log('🚀 Démarrage de la migration JSON → Postgres (Supabase)...\n');
 
     const dataPath = path.join(process.cwd(), 'data', 'market.json');
     const rawData = fs.readFileSync(dataPath, 'utf-8');
