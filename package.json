@@ -5,13 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "prisma generate && next build",
     "prisma:generate": "prisma generate",
     "migrate:deploy": "prisma migrate deploy",
     "migrate:status": "prisma migrate status",
     "db:push": "prisma db push",
     "start": "next start",
     "lint": "next lint"
+    "seed:market": "node scripts/seed-market.js",
   },
   "dependencies": {
     "@prisma/client": "5.22.0",
