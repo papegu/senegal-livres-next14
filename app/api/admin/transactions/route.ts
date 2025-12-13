@@ -35,6 +35,12 @@ async function isAdmin(req: Request): Promise<boolean> {
 
 export async function GET(req: Request) {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      console.log("[Transactions API] Prisma client not available");
+      return NextResponse.json({ error: "Database not available" }, { status: 503 });
+    }
+
     if (!(await isAdmin(req))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -50,6 +56,12 @@ export async function GET(req: Request) {
 
 export async function PUT(req: Request) {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      console.log("[Transactions API] Prisma client not available");
+      return NextResponse.json({ error: "Database not available" }, { status: 503 });
+    }
+
     if (!(await isAdmin(req))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -78,6 +90,12 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      console.log("[Transactions API] Prisma client not available");
+      return NextResponse.json({ error: "Database not available" }, { status: 503 });
+    }
+
     if (!(await isAdmin(req))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
