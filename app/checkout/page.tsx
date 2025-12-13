@@ -99,16 +99,16 @@ export default function CheckoutPage() {
         window.location.href = payment_url;
       } else if (selectedMethod === 'orange') {
         if (!phoneNumber) {
-             credentials: 'include',
           setError('Please enter your phone number');
           setProcessing(false);
           return;
         }
-        
+
         const res = await fetch('/api/payments/orange', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ amount: total, phone: phoneNumber }),
+          credentials: 'include',
         });
         
         if (!res.ok) throw new Error('Orange Money payment failed');
@@ -116,8 +116,7 @@ export default function CheckoutPage() {
         window.location.href = payment_url;
       } else if (selectedMethod === 'paydunya') {
         // Récupérer l'utilisateur pour l'email
-             credentials: 'include',
-        const userRes = await fetch('/api/auth/me');
+        const userRes = await fetch('/api/auth/me', { credentials: 'include' });
         let customerEmail = '';
         if (userRes.ok) {
           const user = await userRes.json();
@@ -159,7 +158,6 @@ export default function CheckoutPage() {
       <div className="min-h-screen bg-[#F4E9CE] flex items-center justify-center">
         <p className="text-xl text-gray-600">Loading checkout...</p>
       </div>
-      const userRes = await fetch('/api/auth/me', { credentials: 'include' });
     );
   }
 
