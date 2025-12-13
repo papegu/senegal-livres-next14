@@ -4,9 +4,17 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifyJwt } from "@/utils/jwt";
+
 let prisma: any;
 
-
+// Charger Prisma uniquement à l’exécution (PAS au build)
+async function getPrisma() {
+  if (!prisma) {
+    const prismaModule = await import("@/lib/prisma");
+    prisma = prismaModule.prisma;
+  }
+  return prisma;
+}
 
 // Vérifier les privilèges admin via JWT cookie
 const requireAdminAuth = async () => {
@@ -32,6 +40,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const prisma = await getPrisma();
+
     await prisma.$queryRaw`SELECT 1`;
 
     const tables = await prisma.$queryRaw`
@@ -95,7 +105,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { action, data } = await req.json();
+    const prisma = await getPrisma();
+    const { action } = await req.json();
 
     if (action === "backup") {
       return NextResponse.json({
@@ -133,4 +144,5 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
 
