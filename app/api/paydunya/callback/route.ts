@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const runtime = "nodejs";
+export const fetchCache = "force-no-store";
+export const dynamicParams = true;
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -19,6 +21,11 @@ export async function OPTIONS() {
 
 export async function POST(req: Request) {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 503 });
+    }
+
     // Lire le JSON envoyé par PayDunya
     const payload = await req.json();
     

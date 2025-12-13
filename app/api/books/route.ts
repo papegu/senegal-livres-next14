@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const runtime = "nodejs";
+export const fetchCache = "force-no-store";
+export const dynamicParams = true;
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -9,6 +11,11 @@ import { requireAdmin } from "../../../utils/AdminAuth";
 
 export async function GET() {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      return NextResponse.json({ error: "Database not available" }, { status: 503 });
+    }
+
     const books = await prisma.book.findMany({ orderBy: { createdAt: "desc" } });
     return NextResponse.json({ books });
   } catch (error) {
@@ -17,6 +24,11 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  // Safety check for build time
+  if (!prisma) {
+    return NextResponse.json({ error: "Database not available" }, { status: 503 });
+  }
+
   const authErr = requireAdmin(req);
   if (authErr) return authErr;
 
@@ -47,6 +59,11 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  // Safety check for build time
+  if (!prisma) {
+    return NextResponse.json({ error: "Database not available" }, { status: 503 });
+  }
+
   const authErr = requireAdmin(req);
   if (authErr) return authErr;
 
@@ -63,6 +80,11 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  // Safety check for build time
+  if (!prisma) {
+    return NextResponse.json({ error: "Database not available" }, { status: 503 });
+  }
+
   const authErr = requireAdmin(req);
   if (authErr) return authErr;
 
