@@ -12,6 +12,7 @@ export default function Home() {
           alt="Sénégal Livres"
           width={500}
           height={500}
+          priority
           className="opacity-20 w-full h-[450px] object-contain mx-auto"
         />
 
