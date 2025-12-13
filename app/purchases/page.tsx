@@ -26,7 +26,7 @@ export default function PurchasesPage() {
 
   const fetchData = async () => {
     try {
-      const purchasesRes = await fetch('/api/purchases');
+      const purchasesRes = await fetch('/api/purchases', { credentials: 'include' });
       if (!purchasesRes.ok) {
         if (purchasesRes.status === 401) {
           router.push('/auth/login');

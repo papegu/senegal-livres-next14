@@ -9,7 +9,7 @@ export default function LogoutPage() {
   useEffect(() => {
     async function logout() {
       try {
-        await fetch("/api/auth/logout", { method: "POST" });
+        await fetch("/api/auth/logout", { method: "POST", credentials: 'include' });
         router.push("/");
       } catch (error) {
         console.error("Logout error:", error);

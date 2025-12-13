@@ -25,7 +25,7 @@ export default function CheckoutPage() {
 
   const checkUserStatus = async () => {
     try {
-      const res = await fetch('/api/auth/me');
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
       if (res.ok) {
         const user = await res.json();
         if (user.blocked) {
@@ -40,7 +40,7 @@ export default function CheckoutPage() {
 
   const fetchCart = async () => {
     try {
-      const res = await fetch('/api/cart');
+      const res = await fetch('/api/cart', { credentials: 'include' });
       if (!res.ok) {
         if (res.status === 401) {
           router.push('/auth/login');
@@ -99,6 +99,7 @@ export default function CheckoutPage() {
         window.location.href = payment_url;
       } else if (selectedMethod === 'orange') {
         if (!phoneNumber) {
+             credentials: 'include',
           setError('Please enter your phone number');
           setProcessing(false);
           return;
@@ -115,6 +116,7 @@ export default function CheckoutPage() {
         window.location.href = payment_url;
       } else if (selectedMethod === 'paydunya') {
         // Récupérer l'utilisateur pour l'email
+             credentials: 'include',
         const userRes = await fetch('/api/auth/me');
         let customerEmail = '';
         if (userRes.ok) {
@@ -157,6 +159,7 @@ export default function CheckoutPage() {
       <div className="min-h-screen bg-[#F4E9CE] flex items-center justify-center">
         <p className="text-xl text-gray-600">Loading checkout...</p>
       </div>
+      const userRes = await fetch('/api/auth/me', { credentials: 'include' });
     );
   }
 
