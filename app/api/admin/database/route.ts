@@ -4,7 +4,8 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifyJwt } from "@/utils/jwt";
-import { prisma } from "@/lib/prisma";
+let prisma: any;
+
 
 
 // Vérifier les privilèges admin via JWT cookie
