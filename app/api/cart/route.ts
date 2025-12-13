@@ -8,6 +8,12 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
+  // Safety check for build time
+  if (!prisma) {
+    console.log("[Cart API] Prisma client not available");
+    return NextResponse.json({ error: "Database not available" }, { status: 503 });
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value;
@@ -44,6 +50,12 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  // Safety check for build time
+  if (!prisma) {
+    console.log("[Cart API] Prisma client not available");
+    return NextResponse.json({ error: "Database not available" }, { status: 503 });
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value;

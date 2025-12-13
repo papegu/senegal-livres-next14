@@ -7,6 +7,12 @@ import { prisma } from '@/lib/prisma';
 import { v4 as uuid } from 'uuid';
 
 export async function POST(req: Request) {
+  // Safety check for build time
+  if (!prisma) {
+    console.log("[PayDunya Invoice API] Prisma client not available");
+    return NextResponse.json({ error: "Database not available" }, { status: 503 });
+  }
+
   try {
     const body = await req.json();
     const { amount, description, customerEmail, userId, bookIds } = body;

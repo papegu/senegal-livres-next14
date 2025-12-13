@@ -7,6 +7,16 @@ import CheckoutForm from "./CheckoutForm";
 type Params = { params: { id: string } };
 
 export default async function BookPage({ params }: Params) {
+  // Safety check for build time
+  if (!prisma) {
+    return (
+      <div className="p-10">
+        <h1>Service temporairement indisponible</h1>
+        <p>La base de données n'est pas accessible pour le moment.</p>
+      </div>
+    );
+  }
+
   const whereClause = Number.isNaN(Number(params.id))
     ? { uuid: params.id }
     : { id: Number(params.id) };

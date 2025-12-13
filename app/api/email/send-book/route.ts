@@ -12,6 +12,12 @@ import { join } from 'path';
 // npm install resend @sendgrid/mail
 
 export async function POST(req: Request) {
+  // Safety check for build time
+  if (!prisma) {
+    console.log("[Email API] Prisma client not available");
+    return NextResponse.json({ error: "Database not available" }, { status: 503 });
+  }
+
   try {
     const { email, bookIds, userEmail, transactionId, location } = await req.json();
 
