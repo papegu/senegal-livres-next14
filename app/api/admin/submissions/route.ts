@@ -87,7 +87,8 @@ export async function PUT(req: Request) {
     }
 
     // Capture prisma in a local variable for use in transaction
-    const db = prisma;
+    // We've already checked prisma is not null above
+    const db = prisma!;
 
     if (action === 'approve') {
       if (!coverImage) {

@@ -90,7 +90,8 @@ export async function POST(req: Request) {
     const txId = transactionId ? Number(transactionId) : null;
 
     // Capture prisma in a local variable for use in transaction
-    const db = prisma;
+    // We've already checked prisma is not null above
+    const db = prisma!;
 
     // Create one row per book
     const created = await db.$transaction(async () => {

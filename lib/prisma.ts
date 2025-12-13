@@ -1,11 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+  prisma: PrismaClient | null | undefined;
 };
 
 // Prevent connection during build
-const createPrismaClient = () => {
+const createPrismaClient = (): PrismaClient | null => {
   if (process.env.SKIP_ENV_VALIDATION || !process.env.DATABASE_URL) {
     return null;
   }
