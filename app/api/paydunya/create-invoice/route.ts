@@ -58,7 +58,7 @@ export async function POST(req: Request) {
 
     // Construire le payload PayDunya
     // Base URL de l'application (prod: https://www.senegal-livres.sn)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (IS_SANDBOX ? 'http://localhost:3000' : 'https://www.senegal-livres.sn');
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (IS_SANDBOX ? 'http://localhost:3000' : 'https://senegal-livres.sn');
     const payload = {
       invoice: {
         items: [
