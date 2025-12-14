@@ -3,51 +3,52 @@ export const revalidate = 0;
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/utils/jwt";
-import { getCookie } from "@/utils/cookieParser";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const cookieHeader = req.headers.get("cookie") || "";
+    // ✅ lire le cookie via Next.js
+    const token = cookies().get("auth_token")?.value;
 
-    const token = getCookie(cookieHeader, 'auth_token');
     if (!token) {
-      console.log("[/api/auth/me] No auth_token found");
+      console.log("[/api/auth/me] No auth_token cookie");
       return NextResponse.json({ ok: false }, { status: 401 });
     }
 
+    // ✅ vérifier le JWT
     const payload = await verifyJwt(token);
-    if (!payload) {
-      console.log("[/api/auth/me] JWT verification failed");
+    if (!payload || !payload.email) {
+      console.log("[/api/auth/me] Invalid JWT payload:", payload);
       return NextResponse.json({ ok: false }, { status: 401 });
     }
 
-    const userId = Number(payload.sub);
-    if (Number.isNaN(userId)) {
-      console.log("[/api/auth/me] Invalid user id in token:", payload.sub);
-      return NextResponse.json({ ok: false }, { status: 400 });
-    }
+    // ✅ retrouver l'utilisateur par email
+    const user = await prisma.user.findUnique({
+      where: { email: payload.email },
+    });
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      console.log("[/api/auth/me] User not found with id:", payload.sub);
+      console.log("[/api/auth/me] User not found:", payload.email);
       return NextResponse.json({ ok: false }, { status: 404 });
     }
 
-    const safe = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      blocked: user.blocked,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
-
-    return NextResponse.json({ ok: true, user: safe });
+    // ✅ réponse sécurisée
+    return NextResponse.json({
+      ok: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        blocked: user.blocked,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+    });
   } catch (err) {
-    console.log("[/api/auth/me] Error:", err);
+    console.error("[/api/auth/me] Error:", err);
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
