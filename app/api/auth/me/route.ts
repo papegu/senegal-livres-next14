@@ -9,8 +9,15 @@ import { verifyJwt } from "@/utils/jwt";
 
 export async function GET() {
   try {
+
     // ✅ lire le cookie via Next.js
-    const token = cookies().get("auth_token")?.value;
+    const cookieObj = cookies().get("auth_token");
+    const token = cookieObj?.value;
+    if (cookieObj) {
+      console.log("[/api/auth/me] auth_token cookie present");
+    } else {
+      console.log("[/api/auth/me] auth_token cookie NOT present");
+    }
 
     if (!token) {
       console.log("[/api/auth/me] No auth_token cookie");
