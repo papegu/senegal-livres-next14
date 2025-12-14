@@ -1,4 +1,5 @@
 # Sénégal Livres - Next.js 14 Bookstore
+Deployment note: Triggered redeploy on Vercel (Dec 14, 2025). This commit is a no-op to force a fresh build and help validate environment alignment and the updated health diagnostics.
 
 A modern e-commerce platform for Senegalese books with integrated payment processing via Wave, Orange Money, and Ecobank card payments.
 
