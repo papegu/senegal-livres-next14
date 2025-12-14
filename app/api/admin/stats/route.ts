@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const runtime = "nodejs";
+export const fetchCache = "force-no-store";
+export const dynamicParams = true;
 
 import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/utils/jwt";
@@ -34,6 +36,12 @@ async function isAdmin(req: Request): Promise<boolean> {
 
 export async function GET(req: Request) {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      console.log("[Stats API] Prisma client not available");
+      return Response.json({ error: "Database not available" }, { status: 503 });
+    }
+
     if (!(await isAdmin(req))) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }

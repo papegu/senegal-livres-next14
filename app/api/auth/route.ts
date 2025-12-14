@@ -11,6 +11,12 @@ import { signJwt } from "@/utils/jwt";
 // Body: { action: "login" | "register", email, password, name? }
 export async function POST(req: Request) {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      console.log("[Auth API] Prisma client not available");
+      return NextResponse.json({ error: "Database not available" }, { status: 503 });
+    }
+
     const body = await req.json();
     const { action, email, password, name } = body;
 

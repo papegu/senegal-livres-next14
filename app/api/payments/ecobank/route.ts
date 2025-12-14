@@ -9,6 +9,12 @@ import { verifyJwt } from "@/utils/jwt";
 import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
+  // Safety check for build time
+  if (!prisma) {
+    console.log("[Ecobank Payment API] Prisma client not available");
+    return NextResponse.json({ error: "Database not available" }, { status: 503 });
+  }
+
   try {
     const { amount, cardToken } = await req.json();
 

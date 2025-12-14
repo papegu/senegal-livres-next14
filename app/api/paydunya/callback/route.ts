@@ -18,6 +18,12 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: Request) {
+  // Safety check for build time
+  if (!prisma) {
+    console.log("[PayDunya Callback API] Prisma client not available");
+    return NextResponse.json({ error: "Database not available" }, { status: 503 });
+  }
+
   try {
     // Lire le JSON envoyé par PayDunya
     const payload = await req.json();

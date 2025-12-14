@@ -6,6 +6,12 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
+  // Safety check for build time
+  if (!prisma) {
+    console.log("[Payment Webhook API] Prisma client not available");
+    return NextResponse.json({ error: "Database not available" }, { status: 503 });
+  }
+
   try {
     const body = await req.json();
 

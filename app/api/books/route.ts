@@ -9,6 +9,12 @@ import { requireAdmin } from "../../../utils/AdminAuth";
 
 export async function GET() {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      console.log("[Books API] Prisma client not available");
+      return NextResponse.json({ error: "Database not available" }, { status: 503 });
+    }
+
     const books = await prisma.book.findMany({ orderBy: { createdAt: "desc" } });
     return NextResponse.json({ books });
   } catch (error) {
@@ -21,6 +27,12 @@ export async function POST(req: Request) {
   if (authErr) return authErr;
 
   try {
+    // Safety check for build time
+    if (!prisma) {
+      console.log("[Books API] Prisma client not available");
+      return NextResponse.json({ error: "Database not available" }, { status: 503 });
+    }
+
     const body = await req.json();
     const { title, author, description, price, coverImage, pdfFile, pdfFileName } = body as any;
     if (!title || !author || !description || !price) {
@@ -51,6 +63,12 @@ export async function PUT(req: Request) {
   if (authErr) return authErr;
 
   try {
+    // Safety check for build time
+    if (!prisma) {
+      console.log("[Books API] Prisma client not available");
+      return NextResponse.json({ error: "Database not available" }, { status: 503 });
+    }
+
     const body = await req.json();
     const { id, ...data } = body as any;
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
@@ -67,6 +85,12 @@ export async function DELETE(req: Request) {
   if (authErr) return authErr;
 
   try {
+    // Safety check for build time
+    if (!prisma) {
+      console.log("[Books API] Prisma client not available");
+      return NextResponse.json({ error: "Database not available" }, { status: 503 });
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id query required" }, { status: 400 });

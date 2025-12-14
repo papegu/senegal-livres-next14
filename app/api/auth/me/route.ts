@@ -9,6 +9,12 @@ import { getCookie } from "@/utils/cookieParser";
 
 export async function GET(req: Request) {
   try {
+    // Safety check for build time
+    if (!prisma) {
+      console.log("[Auth Me API] Prisma client not available");
+      return NextResponse.json({ error: "Database not available" }, { status: 503 });
+    }
+
     const cookieHeader = req.headers.get("cookie") || "";
 
     const token = getCookie(cookieHeader, 'auth_token');

@@ -10,6 +10,12 @@ import { join } from "path";
 import { existsSync } from "fs";
 
 export async function GET(req: Request) {
+  // Safety check for build time
+  if (!prisma) {
+    console.log("[PDF Download API] Prisma client not available");
+    return Response.json({ error: "Database not available" }, { status: 503 });
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value;
