@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -38,6 +40,7 @@ export default function AdminSubmissionsPage() {
   const fetchSubmissions = async () => {
     try {
       const res = await fetch('/api/admin/submissions', {
+        cache: 'no-store',
         credentials: 'include',
         headers: {
           'x-admin-token': localStorage.getItem('admin_token') || '',
@@ -82,6 +85,7 @@ export default function AdminSubmissionsPage() {
     try {
       const res = await fetch('/api/admin/submissions', {
         method: 'PUT',
+        cache: 'no-store',
         credentials: 'include',
         headers: {
           'x-admin-token': localStorage.getItem('admin_token') || '',
@@ -124,6 +128,7 @@ export default function AdminSubmissionsPage() {
     try {
       const res = await fetch('/api/admin/submissions', {
         method: 'PUT',
+        cache: 'no-store',
         credentials: 'include',
         headers: {
           'x-admin-token': localStorage.getItem('admin_token') || '',

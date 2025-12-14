@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -47,6 +49,7 @@ export default function DatabaseAdmin() {
     try {
       setLoading(true);
       const res = await fetch('/api/admin/database', {
+        cache: 'no-store',
         credentials: 'include',
         headers: {
           'x-admin-token': localStorage.getItem('admin_token') || '',
@@ -82,6 +85,7 @@ export default function DatabaseAdmin() {
       setActionLoading(true);
       const res = await fetch('/api/admin/database', {
         method: 'POST',
+        cache: 'no-store',
         credentials: 'include',
         headers: {
           'x-admin-token': localStorage.getItem('admin_token') || '',
