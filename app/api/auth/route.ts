@@ -68,7 +68,7 @@ export async function POST(req: Request) {
         value: token,
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: (process.env.COOKIE_SAMESITE as any) || "lax",
+        sameSite: (process.env.COOKIE_SAMESITE as any) || (process.env.NODE_ENV === "production" ? "none" : "lax"),
         maxAge: 7 * 24 * 60 * 60, // 7 days
         path: "/",
         domain: cookieDomain,
