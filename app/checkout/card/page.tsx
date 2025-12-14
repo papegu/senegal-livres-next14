@@ -15,6 +15,18 @@ interface CartItem {
 }
 
 export default function CardCheckoutPage() {
+    useEffect(() => {
+      // Détection blocage cookies/localStorage (anti-tracking)
+      try {
+        localStorage.setItem('test', '1');
+        if (localStorage.getItem('test') !== '1') {
+          alert("Votre navigateur bloque le stockage local. Certaines fonctionnalités peuvent être limitées.");
+        }
+        localStorage.removeItem('test');
+      } catch (e) {
+        alert("Votre navigateur bloque le stockage local ou les cookies. Certaines fonctionnalités peuvent être limitées.");
+      }
+    }, []);
   const router = useRouter();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);

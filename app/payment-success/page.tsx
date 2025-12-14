@@ -4,6 +4,18 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function PaymentSuccessContent() {
+    useEffect(() => {
+      // Détection blocage cookies/localStorage (anti-tracking)
+      try {
+        localStorage.setItem('test', '1');
+        if (localStorage.getItem('test') !== '1') {
+          alert("Votre navigateur bloque le stockage local. Certaines fonctionnalités peuvent être limitées.");
+        }
+        localStorage.removeItem('test');
+      } catch (e) {
+        alert("Votre navigateur bloque le stockage local ou les cookies. Certaines fonctionnalités peuvent être limitées.");
+      }
+    }, []);
   const router = useRouter();
   const searchParams = useSearchParams();
   const [message, setMessage] = useState('Processing your purchase...');

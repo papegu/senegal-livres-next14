@@ -4,6 +4,18 @@ import { Book } from "@/types/Book";
 import { useEffect, useState } from "react";
 
 export default function BooksPage() {
+    useEffect(() => {
+      // Détection blocage cookies/localStorage (anti-tracking)
+      try {
+        localStorage.setItem('test', '1');
+        if (localStorage.getItem('test') !== '1') {
+          alert("Votre navigateur bloque le stockage local. Certaines fonctionnalités peuvent être limitées.");
+        }
+        localStorage.removeItem('test');
+      } catch (e) {
+        alert("Votre navigateur bloque le stockage local ou les cookies. Certaines fonctionnalités peuvent être limitées.");
+      }
+    }, []);
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [cartMessage, setCartMessage] = useState<string>("");
