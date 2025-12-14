@@ -1,4 +1,4 @@
-# 🚀 Guide Complet de Déploiement - senegal-livres.sn
+# 🚀 Guide Complet de Déploiement - senegal-livres.sn avec commit force
 
 ## Vue d'ensemble
 

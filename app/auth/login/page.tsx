@@ -21,6 +21,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
+          credentials: "include", // 🔥 LIGNE CRITIQUE
         body: JSON.stringify({
           action: "login",
           email,
