@@ -67,22 +67,18 @@ export async function POST(req: Request) {
         { status: 200 }
       );
 
-      // Derive domain from request host to avoid mismatches
-      const hostHeader = req.headers.get("host") || undefined;
-      const cookieDomain = process.env.NODE_ENV === "production" ? (hostHeader?.replace(/^www\./, "") || undefined) : undefined;
-
-      // Set token in HTTP-only cookie
-      response.cookies.set({
-        name: "auth_token",
-        value: token,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: (process.env.COOKIE_SAMESITE as any) || (process.env.NODE_ENV === "production" ? "none" : "lax"),
-        maxAge: 7 * 24 * 60 * 60, // 7 days
-        path: "/",
-        domain: cookieDomain,
-      });
-
+      // Set token in HTTP-only cookie (no domain, always secure, sameSite: 'lax')
+      response.cookies.set(
+        "auth_token",
+        token,
+        {
+          httpOnly: true,
+          secure: true,
+          sameSite: "lax",
+          maxAge: 7 * 24 * 60 * 60,
+          path: "/"
+        }
+      );
       return response;
     }
 
