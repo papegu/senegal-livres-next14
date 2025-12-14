@@ -58,6 +58,10 @@ export async function POST(req: Request) {
         { status: 200 }
       );
 
+      // Derive domain from request host to avoid mismatches
+      const hostHeader = req.headers.get("host") || undefined;
+      const cookieDomain = process.env.NODE_ENV === "production" ? (hostHeader?.replace(/^www\./, "") || undefined) : undefined;
+
       // Set token in HTTP-only cookie
       response.cookies.set({
         name: "auth_token",
@@ -67,7 +71,7 @@ export async function POST(req: Request) {
         sameSite: "lax",
         maxAge: 7 * 24 * 60 * 60, // 7 days
         path: "/",
-        domain: process.env.NODE_ENV === "production" ? "senegal-livres.sn" : undefined,
+        domain: cookieDomain,
       });
 
       return response;
