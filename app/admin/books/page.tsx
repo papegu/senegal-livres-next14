@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Book } from '@/types/Book';
@@ -44,6 +46,7 @@ export default function AdminBooksPage() {
   const fetchBooks = async () => {
     try {
       const res = await fetch('/api/admin/books', {
+        cache: 'no-store',
         credentials: 'include',
         headers: {
           'x-admin-token': localStorage.getItem('admin_token') || '',

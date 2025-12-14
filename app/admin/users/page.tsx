@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -28,6 +30,7 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     try {
       const res = await fetch('/api/admin/users', {
+        cache: 'no-store',
         credentials: 'include',
         headers: {
           'x-admin-token': localStorage.getItem('admin_token') || '',
