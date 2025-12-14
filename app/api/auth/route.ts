@@ -23,7 +23,16 @@ export async function POST(req: Request) {
 
     // LOGIN
     if (action === "login") {
-      const user = await prisma.user.findUnique({ where: { email } });
+      let user;
+      try {
+        user = await prisma.user.findUnique({ where: { email } });
+      } catch (dbErr: any) {
+        console.error("[auth/login] Database error:", dbErr?.message || dbErr);
+        return NextResponse.json(
+          { error: "Server database error" },
+          { status: 500 }
+        );
+      }
       if (!user) {
         return NextResponse.json(
           { error: "User not found" },
