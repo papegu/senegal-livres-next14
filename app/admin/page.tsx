@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -25,6 +27,7 @@ export default function AdminDashboard() {
   const fetchStats = async () => {
     try {
       const res = await fetch('/api/admin/stats', {
+        cache: 'no-store',
         credentials: 'include',
         headers: {
           'x-admin-token': localStorage.getItem('admin_token') || '',
