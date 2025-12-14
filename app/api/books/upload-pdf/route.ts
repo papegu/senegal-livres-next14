@@ -6,8 +6,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyJwt } from '@/utils/jwt';
 import { cookies } from 'next/headers';
-import fs from 'fs';
-import path from 'path';
+import { supabase } from '@/lib/supabase';
 
 export async function POST(req: Request) {
   try {
@@ -50,24 +49,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'File too large (max 50MB)' }, { status: 413 });
     }
 
-    // Créer le dossier pdfs s'il n'existe pas
-    const pdfDir = path.join(process.cwd(), 'public', 'pdfs');
-    if (!fs.existsSync(pdfDir)) {
-      fs.mkdirSync(pdfDir, { recursive: true });
-    }
 
-    // Sauvegarder le fichier
+    // Upload PDF to Supabase Storage
     const fileName = `${bookId}_${Date.now()}.pdf`;
-    const filePath = path.join(pdfDir, fileName);
     const buffer = Buffer.from(await file.arrayBuffer());
-    fs.writeFileSync(filePath, buffer);
+    const { data, error: uploadError } = await supabase.storage
+      .from('pdfs')
+      .upload(fileName, buffer, {
+        contentType: 'application/pdf',
+        upsert: true,
+      });
+    if (uploadError) {
+      console.error('Supabase upload error:', uploadError);
+      return NextResponse.json({ message: 'Supabase upload failed', error: uploadError.message }, { status: 500 });
+    }
+    const publicUrl = supabase.storage.from('pdfs').getPublicUrl(fileName).data.publicUrl;
 
     // Mettre à jour la base de données
     const bookWhere = Number.isNaN(Number(bookId)) ? { uuid: bookId } : { id: Number(bookId) };
     const updated = await prisma.book.update({
       where: bookWhere,
       data: {
-        pdfFile: `/pdfs/${fileName}`,
+        pdfFile: publicUrl,
         pdfFileName: fileName,
       },
     }).catch(() => null);
@@ -80,6 +83,7 @@ export async function POST(req: Request) {
       ok: true,
       message: 'PDF uploaded successfully',
       book: updated,
+      pdfUrl: publicUrl,
     });
   } catch (error) {
     console.error('PDF upload error:', error);
