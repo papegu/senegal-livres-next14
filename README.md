@@ -20,28 +20,76 @@ A modern e-commerce platform for Senegalese books with integrated payment proces
 ### Installation
 ```bash
 npm install
-npm install @stripe/react-stripe-js @stripe/stripe-js bcryptjs uuid jose
 ```
 
 ### Environment Setup
+
+#### Development Environment
 Create `.env.local`:
 ```env
-NEXT_PUBLIC_STRIPE_KEY=pk_test_your_key
-STRIPE_SECRET_KEY=sk_test_your_key
-WAVE_API_KEY=your_wave_key
-ORANGE_API_KEY=your_orange_key
-ECOBANK_API_KEY=your_ecobank_key
+# Database (choose one)
+DATABASE_URL="postgresql://user:password@localhost:5432/senegal_livres"
+# or MySQL: DATABASE_URL="mysql://root:password@localhost:3306/senegal_livres"
+
+# Application
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
-JWT_SECRET=your_secret
-ADMIN_TOKEN=your_admin_token
 NODE_ENV=development
+
+# Security (CRITICAL - Generate strong secrets for production)
+JWT_SECRET=your_jwt_secret_min_32_characters_recommended
+ADMIN_TOKEN=your_admin_token_change_in_production
+
+# Supabase (for PDF storage)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Payment providers (optional for development)
+PAYDUNYA_MASTER_KEY=your_key
+PAYDUNYA_PUBLIC_KEY=your_key
+PAYDUNYA_PRIVATE_KEY=your_key
+PAYDUNYA_TOKEN=your_token
+NEXT_PUBLIC_STRIPE_KEY=pk_test_your_key
 ```
+
+#### Production Environment (Vercel)
+
+**Required Environment Variables:**
+
+1. **Database** (PostgreSQL recommended for Vercel):
+   ```
+   DATABASE_URL=postgresql://user:pass@host:5432/db
+   DIRECT_URL=postgresql://user:pass@host:5432/db  # For migrations
+   ```
+
+2. **Security** (CRITICAL):
+   ```
+   JWT_SECRET=<generate-with-openssl-rand-base64-32>
+   ADMIN_TOKEN=<generate-with-openssl-rand-base64-32>
+   ```
+   ⚠️ **Important**: Use strong, randomly generated secrets in production!
+
+3. **Application**:
+   ```
+   NEXT_PUBLIC_BASE_URL=https://your-domain.vercel.app
+   NODE_ENV=production
+   ```
+
+4. **Supabase Storage** (for PDF files):
+   ```
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=<from-supabase-settings>
+   ```
+
+5. **Payment Providers** (as needed):
+   - PayDunya, Stripe, Wave, Orange Money, Ecobank
+
+See `.env.example` for complete list of environment variables.
 
 ### Run Development Server
 ```bash
 npm run dev
 ```
-Open http://localhost:3003 (or next available port)
+Open http://localhost:3000 (or next available port)
 
 ## Usage
 
@@ -154,10 +202,58 @@ data/
 
 ## Database
 
-Single JSON file (`data/market.json`) with:
-- **books**: Catalog of available books
+The application uses **PostgreSQL** (via Supabase or other providers) with Prisma ORM:
+- **books**: Catalog of available books with PDF references
 - **users**: Registered users with hashed passwords
 - **transactions**: Payment transaction history
+- **purchases**: User purchases and download tracking
+- **submissions**: User-submitted books for review
+
+### Database Schema
+Key fields in the `book` model:
+- `pdfFile`: URL to PDF file (Supabase Storage or external URL)
+- `pdfFileName`: Original filename of the PDF
+- `eBook`: Boolean indicating if it's an electronic book
+- `coverImage`: Book cover image URL
+
+## PDF Management & Storage
+
+### Supabase Storage Integration
+
+The application uses **Supabase Storage** for managing PDF files:
+
+1. **Upload Process** (Admin only):
+   - Upload PDFs via `/api/books/upload-pdf`
+   - Files are stored in Supabase Storage bucket `pdfs`
+   - Public URL is saved in `book.pdfFile` field
+
+2. **Download Process**:
+   - Authenticated users download via `/api/pdfs/download?bookId=X`
+   - Priority 1: Redirect to Supabase URL if available (`book.pdfFile`)
+   - Priority 2: Fallback to local files in `public/pdfs/` (legacy support)
+
+3. **Email Delivery**:
+   - `/api/email/send-book` generates download links
+   - Uses `book.pdfFile` field from database
+   - Supports both Supabase URLs and local fallback
+
+### Setup Supabase Storage
+
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Create a storage bucket named `pdfs`
+3. Set bucket to **public** for direct downloads
+4. Add environment variables:
+   ```env
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   ```
+
+### Migration from Local PDFs
+
+For existing books with local PDFs:
+- Local files in `public/pdfs/` are still supported (fallback)
+- Gradually migrate to Supabase by uploading PDFs via admin panel
+- The download endpoint automatically handles both sources
 
 ## Testing Payments (Sandbox Mode)
 
@@ -172,16 +268,42 @@ Single JSON file (`data/market.json`) with:
 
 ## Production Deployment
 
-1. Obtain real API keys from providers
-2. Update `.env.local` with production credentials
-3. Set `NODE_ENV=production`
-4. Use HTTPS URLs
-5. Deploy to Vercel or your server
+### Vercel Deployment Checklist
 
-```bash
-npm run build
-npm start
-```
+1. **Database Setup**:
+   - Use Supabase PostgreSQL (recommended) or PlanetScale
+   - Set `DATABASE_URL` and `DIRECT_URL` in Vercel environment variables
+
+2. **Environment Variables** (Critical):
+   - `JWT_SECRET` - Generate: `openssl rand -base64 32`
+   - `ADMIN_TOKEN` - Generate: `openssl rand -base64 32`
+   - `NEXT_PUBLIC_BASE_URL` - Your production domain
+   - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
+   - Payment provider keys (PayDunya, Stripe, etc.)
+
+3. **Supabase Storage**:
+   - Create `pdfs` bucket in Supabase Storage
+   - Set bucket to public
+   - Configure CORS if needed
+
+4. **Build & Deploy**:
+   ```bash
+   npm run build
+   npm start
+   ```
+
+### Authentication Configuration
+
+The application uses:
+- **JWT tokens** for authentication (requires `JWT_SECRET`)
+- **HTTP-only cookies** for token storage (`auth_token`)
+- Cookie settings for production:
+  - `httpOnly: true` - Prevents XSS attacks
+  - `secure: true` - HTTPS only
+  - `sameSite: 'lax'` - CSRF protection
+  - `path: '/'` - Available across entire domain
+
+**Important**: Ensure `JWT_SECRET` is at least 32 characters for security!
 
 ## Troubleshooting
 
@@ -190,7 +312,10 @@ npm start
 | Port already in use | Next.js uses next available port |
 | Stripe error | Check `NEXT_PUBLIC_STRIPE_KEY` in `.env.local` |
 | Payment API 500 | Verify credentials in `.env.local` |
-| Auth token issues | Check `JWT_SECRET` and `ADMIN_TOKEN` |
+| Auth token issues | Check `JWT_SECRET` (min 32 chars) and `ADMIN_TOKEN` |
+| Login fails on Vercel | Verify `JWT_SECRET` and `NEXT_PUBLIC_BASE_URL` are set |
+| PDF download fails | Check `SUPABASE_URL` and bucket permissions |
+| "PDF not found" error | Verify `book.pdfFile` field or local file exists |
 
 ## Support
 
