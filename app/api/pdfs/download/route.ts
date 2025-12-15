@@ -48,7 +48,22 @@ export async function GET(req: Request) {
       return Response.json({ error: "Access denied" }, { status: 403 });
     }
 
-    // Serve PDF file
+    // Get book to check for Supabase pdfFile URL
+    const book = await prisma.book.findUnique({
+      where: { id: bookIdInt },
+      select: { pdfFile: true, title: true },
+    });
+
+    if (!book) {
+      return Response.json({ error: "Book not found" }, { status: 404 });
+    }
+
+    // Priority 1: If Supabase URL exists, redirect to it
+    if (book.pdfFile && book.pdfFile.trim() !== "") {
+      return Response.redirect(book.pdfFile, 302);
+    }
+
+    // Priority 2: Fallback to local storage for backward compatibility
     const pdfPath = join(process.cwd(), "public", "pdfs", `${bookIdInt}.pdf`);
 
     if (!existsSync(pdfPath)) {
@@ -60,7 +75,7 @@ export async function GET(req: Request) {
     return new Response(pdfData, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${bookIdInt}.pdf"`,
+        "Content-Disposition": `attachment; filename="${book.title || bookIdInt}.pdf"`,
       },
     });
   } catch (error) {

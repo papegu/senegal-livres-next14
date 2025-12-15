@@ -24,6 +24,8 @@ export async function GET() {
         coverImage: true,
         pdfFile: true,
         pdfFileName: true,
+        eBook: true,
+        status: true,
         createdAt: true,
       },
     })

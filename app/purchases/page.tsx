@@ -55,9 +55,25 @@ export default function PurchasesPage() {
       .filter(Boolean) as Book[];
   };
 
-  const handleDownload = async (bookId: string, bookTitle: string) => {
+  const handleDownload = async (book: Book) => {
     try {
-      const response = await fetch(`/api/pdfs/download?bookId=${bookId}`);
+      // If book has a direct Supabase pdfFile URL, use it directly
+      if (book.pdfFile && book.pdfFile.trim() !== '') {
+        // For Supabase URLs, open in new tab or download directly
+        const link = document.createElement('a');
+        link.href = book.pdfFile;
+        link.download = `${book.title}.pdf`;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
+
+      // Fallback to API endpoint for local storage or backward compatibility
+      const response = await fetch(`/api/pdfs/download?bookId=${book.id}`, {
+        credentials: 'include',
+      });
       if (!response.ok) {
         throw new Error('Failed to download PDF');
       }
@@ -66,7 +82,7 @@ export default function PurchasesPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${bookTitle}.pdf`;
+      a.download = `${book.title}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -140,7 +156,7 @@ export default function PurchasesPage() {
                           <p className="text-sm text-gray-600">{book.author}</p>
                           <p className="text-[#128A41] font-semibold mt-2">{book.price} FCFA</p>
                           <button
-                            onClick={() => handleDownload(book.id, book.title)}
+                            onClick={() => handleDownload(book)}
                             className="mt-3 bg-[#C0392B] text-white px-4 py-2 rounded text-sm hover:bg-black transition"
                           >
                             ⬇️ Download PDF

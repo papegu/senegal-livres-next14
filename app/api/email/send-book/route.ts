@@ -40,18 +40,29 @@ export async function POST(req: Request) {
     if (location?.lat && location?.lon) {
       console.log('[SendBook] Client location:', location);
     }
-    // Construire les liens de téléchargement (si PDF dispo dans public/pdfs/<id>.pdf)
+    // Construire les liens de téléchargement en utilisant pdfFile (Supabase) si disponible
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     const deliveries = books.map((b: any) => {
-      const pdfPath = join(process.cwd(), 'public', 'pdfs', `${b.id}.pdf`);
-      const hasPdf = existsSync(pdfPath);
-      const downloadUrl = hasPdf
-        ? `${baseUrl}/api/pdfs/download?bookId=${encodeURIComponent(b.id)}`
-        : null;
+      // Priority 1: Use Supabase pdfFile URL if available
+      const hasPdf = !!(b.pdfFile && b.pdfFile.trim() !== '');
+      let downloadUrl = null;
+      
+      if (hasPdf) {
+        // Use Supabase URL directly for authenticated download
+        downloadUrl = b.pdfFile;
+      } else {
+        // Priority 2: Check local storage for backward compatibility
+        const pdfPath = join(process.cwd(), 'public', 'pdfs', `${b.id}.pdf`);
+        const hasLocalPdf = existsSync(pdfPath);
+        if (hasLocalPdf) {
+          downloadUrl = `${baseUrl}/api/pdfs/download?bookId=${encodeURIComponent(b.id)}`;
+        }
+      }
+      
       return {
         bookId: b.id,
         title: b.title,
-        hasPdf,
+        hasPdf: hasPdf || downloadUrl !== null,
         downloadUrl,
       };
     });

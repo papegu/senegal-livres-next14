@@ -33,8 +33,8 @@ export default function CartPage() {
 
   async function fetchData() {
     try {
-      // Fetch cart
-      const cartRes = await fetch("/api/cart");
+      // Fetch cart - requires authentication via cookie
+      const cartRes = await fetch("/api/cart", { credentials: 'include' });
       if (cartRes.status === 401) {
         router.push("/auth/login");
         return;
@@ -45,7 +45,7 @@ export default function CartPage() {
       const cartData = await cartRes.json();
       setCart(Array.isArray(cartData.cart) ? cartData.cart : []);
 
-      // Fetch books
+      // Fetch books - public endpoint
       const booksRes = await fetch("/api/books");
       if (!booksRes.ok) {
         throw new Error("Failed to load books");
@@ -68,6 +68,7 @@ export default function CartPage() {
       const res = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({ bookId, action: "remove" }),
       });
       if (!res.ok) {
