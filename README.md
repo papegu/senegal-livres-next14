@@ -1,12 +1,18 @@
 # Sénégal Livres - Next.js 14 Bookstore
-Deployment note: Triggered redeploy on Vercel (Dec 14, 2025). This commit is a no-op to force a fresh build and help validate environment alignment and the updated health diagnostics.
 
 A modern e-commerce platform for Senegalese books with integrated payment processing via Wave, Orange Money, and Ecobank card payments.
 
+## 📚 Quick Links
+
+- **[Deployment Guide](./DEPLOYMENT_GUIDE.md)** - Complete guide for deploying to production (Vercel)
+- **[Environment Variables](./.env.example)** - All required configuration variables
+- **Quick Start** - See below for local development setup
+
 ## Features
 
-✅ **Book Catalog** - Browse and manage books with cover images
+✅ **Book Catalog** - Browse and manage books with cover images and PDFs
 ✅ **User Authentication** - Register and login with JWT tokens
+✅ **PDF Management** - Supabase Storage integration with local fallback
 ✅ **Multi-Method Payment Processing**:
    - Wave (mobile money)
    - Orange Money (mobile money)
