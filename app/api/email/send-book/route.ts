@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { getBaseUrl } from '@/utils/environment';
+import { isValidHttpUrl } from '@/utils/url';
 
 // Configuration pour envoyer les PDFs par email
 // Note: Pour production, utilisez Resend ou SendGrid
@@ -52,8 +53,8 @@ export async function POST(req: Request) {
       let downloadUrl: string | null = null;
       let hasPdf = false;
 
-      // Si pdfFile existe et est une URL Supabase
-      if (b.pdfFile && (b.pdfFile.startsWith('http://') || b.pdfFile.startsWith('https://'))) {
+      // Si pdfFile existe et est une URL valide (Supabase)
+      if (isValidHttpUrl(b.pdfFile)) {
         downloadUrl = b.pdfFile;
         hasPdf = true;
       } else {

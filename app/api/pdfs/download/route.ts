@@ -9,6 +9,7 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
 import { NextResponse } from "next/server";
+import { isValidHttpUrl } from "@/utils/url";
 
 export async function GET(req: Request) {
   try {
@@ -60,11 +61,8 @@ export async function GET(req: Request) {
     }
 
     // If pdfFile exists (Supabase URL), redirect to it
-    if (book.pdfFile && book.pdfFile.trim() !== "") {
-      // If it's a full URL (Supabase), redirect to it
-      if (book.pdfFile.startsWith("http://") || book.pdfFile.startsWith("https://")) {
-        return NextResponse.redirect(book.pdfFile);
-      }
+    if (isValidHttpUrl(book.pdfFile)) {
+      return NextResponse.redirect(book.pdfFile);
     }
 
     // Fallback: serve from local public/pdfs directory (legacy)
