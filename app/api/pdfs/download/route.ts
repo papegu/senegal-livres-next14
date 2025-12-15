@@ -72,10 +72,15 @@ export async function GET(req: Request) {
 
     const pdfData = await readFile(pdfPath);
 
+    // Sanitize book title for use in filename
+    const sanitizedTitle = book.title
+      ? book.title.replace(/[/\\:*?"<>|]/g, '_')
+      : String(bookIdInt);
+
     return new Response(pdfData, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${book.title || bookIdInt}.pdf"`,
+        "Content-Disposition": `attachment; filename="${sanitizedTitle}.pdf"`,
       },
     });
   } catch (error) {

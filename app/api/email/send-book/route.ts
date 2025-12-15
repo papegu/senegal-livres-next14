@@ -44,10 +44,10 @@ export async function POST(req: Request) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     const deliveries = books.map((b: any) => {
       // Priority 1: Use Supabase pdfFile URL if available
-      const hasPdf = !!(b.pdfFile && b.pdfFile.trim() !== '');
+      const hasSupabasePdf = !!(b.pdfFile && b.pdfFile.trim() !== '');
       let downloadUrl = null;
       
-      if (hasPdf) {
+      if (hasSupabasePdf) {
         // Use Supabase URL directly for authenticated download
         downloadUrl = b.pdfFile;
       } else {
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       return {
         bookId: b.id,
         title: b.title,
-        hasPdf: hasPdf || downloadUrl !== null,
+        hasPdf: downloadUrl !== null,
         downloadUrl,
       };
     });

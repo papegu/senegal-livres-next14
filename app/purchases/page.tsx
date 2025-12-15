@@ -59,14 +59,8 @@ export default function PurchasesPage() {
     try {
       // If book has a direct Supabase pdfFile URL, use it directly
       if (book.pdfFile && book.pdfFile.trim() !== '') {
-        // For Supabase URLs, open in new tab or download directly
-        const link = document.createElement('a');
-        link.href = book.pdfFile;
-        link.download = `${book.title}.pdf`;
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // For Supabase URLs, open in new tab (download attribute is ignored for cross-origin URLs)
+        window.open(book.pdfFile, '_blank');
         return;
       }
 
