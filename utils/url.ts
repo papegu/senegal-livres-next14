@@ -31,7 +31,7 @@ export function isSupabaseUrl(url: string | undefined | null): boolean {
   }
 
   try {
-    const urlObj = new URL(url!);
+    const urlObj = new URL(url as string);
     return urlObj.hostname.includes('supabase.co');
   } catch {
     return false;
