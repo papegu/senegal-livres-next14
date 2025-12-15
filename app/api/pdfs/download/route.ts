@@ -73,10 +73,16 @@ export async function GET(req: Request) {
           }
           
           const pdfData = await pdfResponse.arrayBuffer();
+          // Sanitize filename to prevent header injection
+          const safeFilename = (book.title || String(bookIdInt))
+            .replace(/[^\w\s-]/g, '') // Remove special chars
+            .replace(/\s+/g, '_')      // Replace spaces with underscores
+            .substring(0, 100);        // Limit length
+          
           return new Response(pdfData, {
             headers: {
               "Content-Type": "application/pdf",
-              "Content-Disposition": `attachment; filename="${book.title || bookIdInt}.pdf"`,
+              "Content-Disposition": `attachment; filename="${safeFilename}.pdf"`,
             },
           });
         } catch (fetchError) {
@@ -95,11 +101,17 @@ export async function GET(req: Request) {
     }
 
     const pdfData = await readFile(pdfPath);
+    
+    // Sanitize filename to prevent header injection
+    const safeFilename = (book.title || String(bookIdInt))
+      .replace(/[^\w\s-]/g, '') // Remove special chars
+      .replace(/\s+/g, '_')      // Replace spaces with underscores
+      .substring(0, 100);        // Limit length
 
     return new Response(pdfData, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${book.title || bookIdInt}.pdf"`,
+        "Content-Disposition": `attachment; filename="${safeFilename}.pdf"`,
       },
     });
   } catch (error) {

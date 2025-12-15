@@ -14,8 +14,9 @@ export async function signJwt(
   payload: JwtPayload,
   expiresIn: string = "7d"
 ): Promise<string> {
-  if (!SECRET_KEY || SECRET_KEY === "dev_secret_change_me") {
-    console.warn("[JWT] WARNING: Using default JWT_SECRET. Set a secure JWT_SECRET in production!");
+  // Warn about weak JWT secrets
+  if (!SECRET_KEY || SECRET_KEY === "dev_secret_change_me" || SECRET_KEY.length < 32) {
+    console.warn("[JWT] WARNING: JWT_SECRET is weak or default. Use a strong random secret (32+ characters) in production!");
   }
   
   return await new SignJWT(payload as any)

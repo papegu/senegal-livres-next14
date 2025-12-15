@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     if (!isSupabaseConfigured() || !supabase) {
       return NextResponse.json({ 
         message: 'Supabase Storage not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.' 
-      }, { status: 500 });
+      }, { status: 503 });
     }
 
     // Upload PDF to Supabase Storage

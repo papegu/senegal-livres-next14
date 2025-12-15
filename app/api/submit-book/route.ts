@@ -43,7 +43,6 @@ export async function POST(req: Request) {
     const filename = `${uuidv4()}.pdf`;
     
     let pdfFileUrl = '';
-    let pdfFileName = filename;
 
     // Priority 1: Upload to Supabase if configured
     if (isSupabaseConfigured() && supabase) {
@@ -100,7 +99,7 @@ export async function POST(req: Request) {
         description,
         category,
         pdfFile: pdfFileUrl,
-        pdfFileName: pdfFileName,
+        pdfFileName: filename,
         status: 'pending',
         reviewNotes: `price=${price || ''}; ebook=${eBook}`,
       },
