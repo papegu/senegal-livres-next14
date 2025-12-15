@@ -30,6 +30,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'Admin access required' }, { status: 403 });
     }
 
+    // Vérifier que Supabase est configuré
+    if (!supabase) {
+      return NextResponse.json({ 
+        message: 'Supabase storage not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.' 
+      }, { status: 503 });
+    }
+
     // Récupérer le formulaire
     const formData = await req.formData();
     const file = formData.get('file') as File;
