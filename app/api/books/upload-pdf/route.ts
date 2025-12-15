@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyJwt } from '@/utils/jwt';
 import { cookies } from 'next/headers';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export async function POST(req: Request) {
   try {
@@ -49,21 +49,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'File too large (max 50MB)' }, { status: 413 });
     }
 
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured() || !supabase) {
+      return NextResponse.json({ 
+        message: 'Supabase Storage not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.' 
+      }, { status: 500 });
+    }
 
     // Upload PDF to Supabase Storage
     const fileName = `${bookId}_${Date.now()}.pdf`;
     const buffer = Buffer.from(await file.arrayBuffer());
+    
     const { data, error: uploadError } = await supabase.storage
       .from('pdfs')
       .upload(fileName, buffer, {
         contentType: 'application/pdf',
         upsert: true,
       });
+
     if (uploadError) {
       console.error('Supabase upload error:', uploadError);
       return NextResponse.json({ message: 'Supabase upload failed', error: uploadError.message }, { status: 500 });
     }
-    const publicUrl = supabase.storage.from('pdfs').getPublicUrl(fileName).data.publicUrl;
+
+    const { data: { publicUrl } } = supabase.storage.from('pdfs').getPublicUrl(fileName);
 
     // Mettre à jour la base de données
     const bookWhere = Number.isNaN(Number(bookId)) ? { uuid: bookId } : { id: Number(bookId) };
@@ -81,7 +90,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
-      message: 'PDF uploaded successfully',
+      message: 'PDF uploaded successfully to Supabase',
       book: updated,
       pdfUrl: publicUrl,
     });

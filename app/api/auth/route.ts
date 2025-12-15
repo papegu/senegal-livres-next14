@@ -56,6 +56,7 @@ export async function POST(req: Request) {
           { status: 500 }
         );
       }
+      
       const token = await signJwt({
         sub: String(user.id),
         email: user.email,
@@ -67,18 +68,21 @@ export async function POST(req: Request) {
         { status: 200 }
       );
 
-      // Set token in HTTP-only cookie (no domain, always secure, sameSite: 'lax')
+      // Set token in HTTP-only cookie
+      // Important for Vercel: Don't set domain, use secure=true, sameSite='lax'
       response.cookies.set(
         "auth_token",
         token,
         {
           httpOnly: true,
-          secure: true,
-          sameSite: "lax",
-          maxAge: 7 * 24 * 60 * 60,
-          path: "/"
+          secure: true, // Always secure (works on localhost with Next.js)
+          sameSite: "lax", // Lax allows GET requests from external sites
+          maxAge: 7 * 24 * 60 * 60, // 7 days
+          path: "/", // Available across entire app
         }
       );
+
+      console.log("[auth/login] Login successful for user:", user.email, "Role:", user.role);
       return response;
     }
 
@@ -112,6 +116,7 @@ export async function POST(req: Request) {
         },
       });
 
+      console.log("[auth/register] New user registered:", newUser.email);
       return NextResponse.json(
         { ok: true, userId: newUser.id, message: "User registered successfully" },
         { status: 201 }

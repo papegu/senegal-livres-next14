@@ -23,7 +23,14 @@ export async function POST(req: Request) {
     }
 
     const numericIds = bookIds.map((b: any) => Number(b)).filter((n: number) => !Number.isNaN(n));
-    const books = await prisma.book.findMany({ where: { id: { in: numericIds } } });
+    const books = await prisma.book.findMany({ 
+      where: { id: { in: numericIds } },
+      select: {
+        id: true,
+        title: true,
+        pdfFile: true,
+      }
+    });
 
     if (books.length === 0) {
       console.warn('[SendBook] No eBooks with PDF found for:', bookIds);
@@ -40,14 +47,33 @@ export async function POST(req: Request) {
     if (location?.lat && location?.lon) {
       console.log('[SendBook] Client location:', location);
     }
-    // Construire les liens de téléchargement (si PDF dispo dans public/pdfs/<id>.pdf)
+
+    // Construire les liens de téléchargement
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     const deliveries = books.map((b: any) => {
-      const pdfPath = join(process.cwd(), 'public', 'pdfs', `${b.id}.pdf`);
-      const hasPdf = existsSync(pdfPath);
-      const downloadUrl = hasPdf
-        ? `${baseUrl}/api/pdfs/download?bookId=${encodeURIComponent(b.id)}`
-        : null;
+      let downloadUrl = null;
+      let hasPdf = false;
+
+      // Priority 1: Use pdfFile (Supabase URL) if available
+      if (b.pdfFile && b.pdfFile.trim() !== '') {
+        if (b.pdfFile.startsWith('http://') || b.pdfFile.startsWith('https://')) {
+          // Direct Supabase URL - use API endpoint for authenticated access
+          downloadUrl = `${baseUrl}/api/pdfs/download?bookId=${encodeURIComponent(b.id)}`;
+          hasPdf = true;
+          console.log(`[SendBook] Book ${b.id} has Supabase URL`);
+        }
+      }
+
+      // Priority 2: Check local file storage as fallback
+      if (!hasPdf) {
+        const pdfPath = join(process.cwd(), 'public', 'pdfs', `${b.id}.pdf`);
+        hasPdf = existsSync(pdfPath);
+        if (hasPdf) {
+          downloadUrl = `${baseUrl}/api/pdfs/download?bookId=${encodeURIComponent(b.id)}`;
+          console.log(`[SendBook] Book ${b.id} has local PDF`);
+        }
+      }
+
       return {
         bookId: b.id,
         title: b.title,
