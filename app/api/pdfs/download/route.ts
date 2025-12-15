@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
+import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   try {
@@ -48,7 +49,25 @@ export async function GET(req: Request) {
       return Response.json({ error: "Access denied" }, { status: 403 });
     }
 
-    // Serve PDF file
+    // Fetch book to get pdfFile URL (Supabase) or fallback to legacy path
+    const book = await prisma.book.findUnique({
+      where: { id: bookIdInt },
+      select: { pdfFile: true, title: true },
+    });
+
+    if (!book) {
+      return Response.json({ error: "Book not found" }, { status: 404 });
+    }
+
+    // If pdfFile exists (Supabase URL), redirect to it
+    if (book.pdfFile && book.pdfFile.trim() !== "") {
+      // If it's a full URL (Supabase), redirect to it
+      if (book.pdfFile.startsWith("http://") || book.pdfFile.startsWith("https://")) {
+        return NextResponse.redirect(book.pdfFile);
+      }
+    }
+
+    // Fallback: serve from local public/pdfs directory (legacy)
     const pdfPath = join(process.cwd(), "public", "pdfs", `${bookIdInt}.pdf`);
 
     if (!existsSync(pdfPath)) {
@@ -56,11 +75,12 @@ export async function GET(req: Request) {
     }
 
     const pdfData = await readFile(pdfPath);
+    const fileName = book.title ? `${book.title}.pdf` : `${bookIdInt}.pdf`;
 
     return new Response(pdfData, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${bookIdInt}.pdf"`,
+        "Content-Disposition": `attachment; filename="${fileName}"`,
       },
     });
   } catch (error) {

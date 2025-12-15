@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { existsSync } from 'fs';
 import { join } from 'path';
+import { getBaseUrl } from '@/utils/environment';
 
 // Configuration pour envoyer les PDFs par email
 // Note: Pour production, utilisez Resend ou SendGrid
@@ -23,7 +24,10 @@ export async function POST(req: Request) {
     }
 
     const numericIds = bookIds.map((b: any) => Number(b)).filter((n: number) => !Number.isNaN(n));
-    const books = await prisma.book.findMany({ where: { id: { in: numericIds } } });
+    const books = await prisma.book.findMany({ 
+      where: { id: { in: numericIds } },
+      select: { id: true, title: true, pdfFile: true, eBook: true }
+    });
 
     if (books.length === 0) {
       console.warn('[SendBook] No eBooks with PDF found for:', bookIds);
@@ -40,14 +44,27 @@ export async function POST(req: Request) {
     if (location?.lat && location?.lon) {
       console.log('[SendBook] Client location:', location);
     }
-    // Construire les liens de téléchargement (si PDF dispo dans public/pdfs/<id>.pdf)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
+    // Construire les liens de téléchargement
+    // Priorité: utiliser pdfFile (URL Supabase) si disponible, sinon fallback vers API
+    const baseUrl = getBaseUrl();
     const deliveries = books.map((b: any) => {
-      const pdfPath = join(process.cwd(), 'public', 'pdfs', `${b.id}.pdf`);
-      const hasPdf = existsSync(pdfPath);
-      const downloadUrl = hasPdf
-        ? `${baseUrl}/api/pdfs/download?bookId=${encodeURIComponent(b.id)}`
-        : null;
+      let downloadUrl: string | null = null;
+      let hasPdf = false;
+
+      // Si pdfFile existe et est une URL Supabase
+      if (b.pdfFile && (b.pdfFile.startsWith('http://') || b.pdfFile.startsWith('https://'))) {
+        downloadUrl = b.pdfFile;
+        hasPdf = true;
+      } else {
+        // Fallback: vérifier le fichier local et utiliser l'API
+        const pdfPath = join(process.cwd(), 'public', 'pdfs', `${b.id}.pdf`);
+        hasPdf = existsSync(pdfPath);
+        downloadUrl = hasPdf
+          ? `${baseUrl}/api/pdfs/download?bookId=${encodeURIComponent(b.id)}`
+          : null;
+      }
+
       return {
         bookId: b.id,
         title: b.title,
