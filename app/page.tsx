@@ -55,6 +55,12 @@ export default function Home() {
                 <a href="https://www.linkedin.com/in/s%C3%A9n%C3%A9gal-livres-1a059619a?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
                   <svg width="32" height="32" fill="currentColor" className="text-blue-700 hover:text-blue-900" viewBox="0 0 24 24"><path d="M19 0h-14c-2.76 0-5 2.24-5 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5v-14c0-2.76-2.24-5-5-5zm-11.75 20h-3v-10h3v10zm-1.5-11.27c-.97 0-1.75-.79-1.75-1.76s.78-1.76 1.75-1.76c.97 0 1.75.79 1.75 1.76s-.78 1.76-1.75 1.76zm15.25 11.27h-3v-5.6c0-1.34-.03-3.07-1.87-3.07-1.87 0-2.16 1.46-2.16 2.97v5.7h-3v-10h2.88v1.36h.04c.4-.75 1.38-1.54 2.84-1.54 3.04 0 3.6 2 3.6 4.59v5.59z"/></svg>
                 </a>
+                <a href="https://www.tiktok.com/@senegal.livres?_r=1&_t=ZM-92OSXJSm9rU" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+                  <svg width="32" height="32" fill="currentColor" className="text-black hover:text-gray-700" viewBox="0 0 24 24"><path d="M12.75 2v14.25a2.25 2.25 0 1 1-2.25-2.25c.124 0 .246.012.366.03V12.5a4.75 4.75 0 1 0 4.75 4.75V7.5c.73.44 1.58.7 2.5.7V6.25c-.62 0-1.19-.19-1.67-.51A2.75 2.75 0 0 1 15.25 3.5V2h-2.5z"/></svg>
+                </a>
+                <a href="https://www.linkedin.com/in/s%C3%A9n%C3%A9gal-livres-1a059619a?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                  <svg width="32" height="32" fill="currentColor" className="text-blue-700 hover:text-blue-900" viewBox="0 0 24 24"><path d="M19 0h-14c-2.76 0-5 2.24-5 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5v-14c0-2.76-2.24-5-5-5zm-11.75 20h-3v-10h3v10zm-1.5-11.27c-.97 0-1.75-.79-1.75-1.76s.78-1.76 1.75-1.76c.97 0 1.75.79 1.75 1.76s-.78 1.76-1.75 1.76zm15.25 11.27h-3v-5.6c0-1.34-.03-3.07-1.87-3.07-1.87 0-2.16 1.46-2.16 2.97v5.7h-3v-10h2.88v1.36h.04c.4-.75 1.38-1.54 2.84-1.54 3.04 0 3.6 2 3.6 4.59v5.59z"/></svg>
+                </a>
               </div>
             </div>
           </p>
