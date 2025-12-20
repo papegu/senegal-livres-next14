@@ -4,6 +4,7 @@ export const fetchCache = "force-no-store";
 import { prisma } from "@/lib/prisma";
 import CheckoutForm from "./CheckoutForm";
 import { Suspense } from "react";
+import ExtractViewerClient from "./ExtractViewerClient";
 
 type Params = { params: { id: string } };
 
@@ -49,28 +50,3 @@ export default async function BookPage({ params }: Params) {
   );
 }
 
-// Composant client pour afficher l’extrait PDF
-// Doit être dans un fichier séparé ou défini ici avec "use client" en haut
-"use client";
-import { useState } from "react";
-
-function ExtractViewerClient({ bookId }: { bookId: string | number }) {
-  const [show, setShow] = useState(false);
-  return (
-    <div>
-      <button
-        className="bg-[#128A41] text-white px-4 py-2 rounded hover:bg-green-700 font-semibold mb-2"
-        onClick={() => setShow((v) => !v)}
-      >
-        {show ? "Masquer l'extrait" : "Lire un extrait (introduction)"}
-      </button>
-      {show && (
-        <iframe
-          src={`/api/pdfs/extract?bookId=${bookId}`}
-          title="Extrait PDF"
-          className="w-full h-96 border mt-2"
-        />
-      )}
-    </div>
-  );
-}
