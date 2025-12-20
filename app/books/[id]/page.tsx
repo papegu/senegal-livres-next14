@@ -36,7 +36,8 @@ export default async function BookPage({ params }: Params) {
 
             <div className="mt-6 flex flex-col gap-2">
               <Suspense fallback={<span>Chargement de l'extrait...</span>}>
-                <ExtractViewer bookId={book.id} />
+                {/* ExtractViewer est un composant client */}
+                <ExtractViewerClient bookId={book.id} />
               </Suspense>
             </div>
 
@@ -46,11 +47,14 @@ export default async function BookPage({ params }: Params) {
       </div>
     </div>
   );
+}
+
 // Composant client pour afficher l’extrait PDF
+// Doit être dans un fichier séparé ou défini ici avec "use client" en haut
 "use client";
 import { useState } from "react";
 
-function ExtractViewer({ bookId }: { bookId: string | number }) {
+function ExtractViewerClient({ bookId }: { bookId: string | number }) {
   const [show, setShow] = useState(false);
   return (
     <div>
@@ -69,5 +73,4 @@ function ExtractViewer({ bookId }: { bookId: string | number }) {
       )}
     </div>
   );
-}
 }
