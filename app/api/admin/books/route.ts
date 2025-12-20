@@ -1,3 +1,66 @@
+export async function PUT(request: Request) {
+  try {
+    let formData, body;
+    const contentType = request.headers.get('content-type') || '';
+    if (contentType.includes('multipart/form-data')) {
+      formData = await request.formData();
+      body = Object.fromEntries(formData.entries());
+    } else {
+      body = await request.json();
+    }
+
+    // Sécurité minimale
+    if (!body?.bookId) {
+      return NextResponse.json(
+        { success: false, message: "bookId is required" },
+        { status: 400 }
+      );
+    }
+
+    let pdfFile = body.pdfFile || '';
+    let pdfFileName = body.pdfFileName || '';
+    if (formData && formData.get('pdf')) {
+      const file = formData.get('pdf');
+      if (file && typeof file === 'object' && 'arrayBuffer' in file) {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        pdfFileName = `${body.bookId}_${Date.now()}.pdf`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('pdfs')
+          .upload(pdfFileName, buffer, {
+            contentType: 'application/pdf',
+            upsert: true,
+          });
+        if (uploadError) {
+          return NextResponse.json({ success: false, error: uploadError.message }, { status: 500 });
+        }
+        pdfFile = supabase.storage.from('pdfs').getPublicUrl(pdfFileName).data.publicUrl;
+      }
+    }
+
+    // Mise à jour du livre dans Supabase
+    const { data: book, error } = await supabase
+      .from('book')
+      .update({ ...body, pdfFile, pdfFileName })
+      .eq('id', body.bookId)
+      .select()
+      .single();
+    if (error) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 500 }
+      );
+    }
+    return NextResponse.json(
+      { success: true, book },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: "Failed to update book" },
+      { status: 500 }
+    );
+  }
+}
 // app/api/admin/books/route.ts
 import { NextResponse } from "next/server";
 import { supabase } from '@/lib/supabase';
