@@ -2,7 +2,6 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const runtime = "nodejs";
 
-import { prisma } from "@/lib/prisma";
 import { readFile, writeFile, unlink } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
@@ -36,10 +35,11 @@ export async function GET(req: Request) {
     }
     const newPdfBytes = await newPdf.save();
 
-    return new Response(newPdfBytes, {
+    // Correction: convertir Uint8Array en Buffer pour la réponse
+    return new Response(Buffer.from(newPdfBytes), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="extrait_${bookId}.pdf"`,
+        "Content-Disposition": `inline; filename=\"extrait_${bookId}.pdf\"`,
       },
     });
   } catch (error) {
