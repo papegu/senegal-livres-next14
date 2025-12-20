@@ -18,8 +18,16 @@ export async function GET() {
         { status: 500 }
       );
     }
+    // Mapper les champs pour compatibilité front (id string, etc.)
+    const mappedBooks = (books || []).map((b) => ({
+      ...b,
+      id: b.id?.toString?.() ?? b.uuid ?? '',
+      price: typeof b.price === 'number' ? b.price : Number(b.price) || 0,
+      eBook: b.eBook ?? false,
+      status: b.status ?? 'available',
+    }));
     return NextResponse.json(
-      { success: true, books },
+      { success: true, books: mappedBooks },
       { status: 200 }
     );
   } catch (error) {
