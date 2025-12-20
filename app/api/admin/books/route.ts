@@ -1,6 +1,7 @@
 // app/api/admin/books/route.ts
 import { NextResponse } from "next/server";
 import { supabase } from '@/lib/supabase';
+import { v4 as uuidv4 } from 'uuid';
 
 // ⚠️ OBLIGATOIRE : forcer Node.js (PayDunya, fs, crypto, etc.)
 export const runtime = "nodejs";
@@ -40,7 +41,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    // Supporte formData pour upload PDF
+    let formData, body;
+    const contentType = request.headers.get('content-type') || '';
+    if (contentType.includes('multipart/form-data')) {
+      formData = await request.formData();
+      body = Object.fromEntries(formData.entries());
+    } else {
+      body = await request.json();
+    }
 
     // 🔒 sécurité minimale
     if (!body?.title) {
@@ -50,10 +59,37 @@ export async function POST(request: Request) {
       );
     }
 
+    // Générer un uuid côté serveur
+    const uuid = uuidv4();
+    let pdfFile = '';
+    let pdfFileName = '';
+
+    // Si un fichier PDF est uploadé
+    if (formData && formData.get('pdf')) {
+      const file = formData.get('pdf');
+      if (file && typeof file === 'object' && 'arrayBuffer' in file) {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        pdfFileName = `${uuid}_${Date.now()}.pdf`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('pdfs')
+          .upload(pdfFileName, buffer, {
+            contentType: 'application/pdf',
+            upsert: true,
+          });
+        if (uploadError) {
+          return NextResponse.json({ success: false, error: uploadError.message }, { status: 500 });
+        }
+        pdfFile = supabase.storage.from('pdfs').getPublicUrl(pdfFileName).data.publicUrl;
+      }
+    } else {
+      pdfFile = body.pdfFile || '';
+      pdfFileName = body.pdfFileName || '';
+    }
+
     // Insertion dans Supabase
     const { data: book, error } = await supabase
       .from('book')
-      .insert([{ ...body }])
+      .insert([{ ...body, uuid, pdfFile, pdfFileName }])
       .select()
       .single();
     if (error) {

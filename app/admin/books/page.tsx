@@ -16,6 +16,7 @@ interface BookFormData {
   coverImage: string;
   status: 'available' | 'pending';
   eBook: boolean;
+  pdf?: File | null;
 }
 
 const initialFormData: BookFormData = {
@@ -26,6 +27,7 @@ const initialFormData: BookFormData = {
   coverImage: '',
   status: 'available',
   eBook: false,
+  pdf: null,
 };
 
 export default function AdminBooksPage() {
@@ -63,11 +65,16 @@ export default function AdminBooksPage() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'price' ? (value === '' ? '' : Number(value)) : value,
-    }));
+    const { name, value, type } = e.target;
+    if (type === 'file') {
+      const file = (e.target as HTMLInputElement).files?.[0] || null;
+      setFormData(prev => ({ ...prev, [name]: file }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: name === 'price' ? (value === '' ? '' : Number(value)) : value,
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,19 +89,44 @@ export default function AdminBooksPage() {
 
       const adminToken = localStorage.getItem('admin_token') || '';
       const method = editingId ? 'PUT' : 'POST';
-      const body = editingId 
-        ? { bookId: editingId, ...formData }
-        : formData;
 
-      const res = await fetch('/api/admin/books', {
-        method,
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-token': adminToken,
-        },
-        body: JSON.stringify(body),
-      });
+      let res;
+      if (formData.pdf) {
+        // Envoi multipart/form-data si PDF sélectionné
+        const data = new FormData();
+        data.append('title', formData.title);
+        data.append('author', formData.author);
+        data.append('price', String(formData.price));
+        data.append('description', formData.description);
+        data.append('coverImage', formData.coverImage);
+        data.append('status', formData.status);
+        data.append('eBook', String(formData.eBook));
+        data.append('pdf', formData.pdf);
+        if (editingId) data.append('bookId', editingId);
+
+        res = await fetch('/api/admin/books', {
+          method,
+          credentials: 'include',
+          headers: {
+            'x-admin-token': adminToken,
+          },
+          body: data,
+        });
+      } else {
+        // Sinon JSON classique
+        const body = editingId 
+          ? { bookId: editingId, ...formData }
+          : formData;
+        res = await fetch('/api/admin/books', {
+          method,
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-token': adminToken,
+          },
+          body: JSON.stringify(body),
+        });
+      }
 
       if (!res.ok) {
         const errData = await res.json();
@@ -294,6 +326,20 @@ export default function AdminBooksPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
                   placeholder="Enter book description"
                   rows={4}
+                />
+              </div>
+
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  PDF du livre (optionnel)
+                </label>
+                <input
+                  type="file"
+                  name="pdf"
+                  accept="application/pdf"
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
                 />
               </div>
 

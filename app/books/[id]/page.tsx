@@ -3,6 +3,7 @@ export const revalidate = 0;
 export const fetchCache = "force-no-store";
 import { prisma } from "@/lib/prisma";
 import CheckoutForm from "./CheckoutForm";
+import { Suspense } from "react";
 
 type Params = { params: { id: string } };
 
@@ -33,10 +34,40 @@ export default async function BookPage({ params }: Params) {
             <p className="mt-4 font-semibold text-[#128A41]">{book.price} FCFA</p>
             <p className="mt-4">{book.description || "Aucune description."}</p>
 
+            <div className="mt-6 flex flex-col gap-2">
+              <Suspense fallback={<span>Chargement de l'extrait...</span>}>
+                <ExtractViewer bookId={book.id} />
+              </Suspense>
+            </div>
+
             <CheckoutForm bookId={String(book.id)} price={book.price} />
           </div>
         </div>
       </div>
     </div>
   );
+// Composant client pour afficher l’extrait PDF
+"use client";
+import { useState } from "react";
+
+function ExtractViewer({ bookId }: { bookId: string | number }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div>
+      <button
+        className="bg-[#128A41] text-white px-4 py-2 rounded hover:bg-green-700 font-semibold mb-2"
+        onClick={() => setShow((v) => !v)}
+      >
+        {show ? "Masquer l'extrait" : "Lire un extrait (introduction)"}
+      </button>
+      {show && (
+        <iframe
+          src={`/api/pdfs/extract?bookId=${bookId}`}
+          title="Extrait PDF"
+          className="w-full h-96 border mt-2"
+        />
+      )}
+    </div>
+  );
+}
 }
