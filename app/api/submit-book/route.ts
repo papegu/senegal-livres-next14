@@ -7,6 +7,7 @@ import { join } from 'path';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
 
 export async function POST(req: Request) {
   try {
@@ -37,22 +38,47 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'File size exceeds 50MB limit' }, { status: 400 });
     }
 
-    // Create submissions directory if it doesn't exist
-    const submissionsDir = join(process.cwd(), 'public', 'submissions');
-    try {
-      await mkdir(submissionsDir, { recursive: true });
-    } catch (err) {
-      console.error('Error creating submissions directory:', err);
+    const filename = `submission_${uuidv4()}.pdf`;
+    let pdfUrl = '';
+
+    // Try to upload to Supabase if configured
+    if (supabase) {
+      try {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const { data, error: uploadError } = await supabase.storage
+          .from('pdfs')
+          .upload(filename, buffer, {
+            contentType: 'application/pdf',
+            upsert: false,
+          });
+        
+        if (!uploadError && data) {
+          pdfUrl = supabase.storage.from('pdfs').getPublicUrl(filename).data.publicUrl;
+          console.log('[SubmitBook] Uploaded to Supabase:', pdfUrl);
+        } else {
+          console.warn('[SubmitBook] Supabase upload failed, falling back to local:', uploadError?.message);
+        }
+      } catch (err) {
+        console.warn('[SubmitBook] Supabase error, falling back to local:', err);
+      }
     }
 
-    // Generate unique filename
-    const filename = `${uuidv4()}.pdf`;
-    const filepath = join(submissionsDir, filename);
+    // Fallback to local storage if Supabase failed or not configured
+    if (!pdfUrl) {
+      const submissionsDir = join(process.cwd(), 'public', 'submissions');
+      try {
+        await mkdir(submissionsDir, { recursive: true });
+      } catch (err) {
+        console.error('Error creating submissions directory:', err);
+      }
 
-    // Save the PDF file
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
+      const filepath = join(submissionsDir, filename);
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      await writeFile(filepath, buffer);
+      pdfUrl = `/submissions/${filename}`;
+      console.log('[SubmitBook] Saved locally:', pdfUrl);
+    }
 
     // Create submission record in database
     const submission = await prisma.submission.create({
@@ -63,7 +89,7 @@ export async function POST(req: Request) {
         author,
         description,
         category,
-        pdfFile: `/submissions/${filename}`,
+        pdfFile: pdfUrl,
         pdfFileName: filename,
         status: 'pending',
         reviewNotes: `price=${price || ''}; ebook=${eBook}`,

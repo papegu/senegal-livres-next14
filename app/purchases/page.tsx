@@ -57,9 +57,17 @@ export default function PurchasesPage() {
 
   const handleDownload = async (bookId: string, bookTitle: string) => {
     try {
-      const response = await fetch(`/api/pdfs/download?bookId=${bookId}`);
+      const response = await fetch(`/api/pdfs/download?bookId=${bookId}`, { credentials: 'include' });
       if (!response.ok) {
-        throw new Error('Failed to download PDF');
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 404) {
+          alert('❌ Ce livre n\'a pas de PDF disponible. Il s\'agit peut-être d\'un livre papier uniquement.');
+        } else if (response.status === 403) {
+          alert('❌ Vous n\'avez pas accès à ce PDF. Veuillez contacter le support.');
+        } else {
+          alert(`❌ Échec du téléchargement: ${errorData.message || 'Erreur inconnue'}`);
+        }
+        return;
       }
 
       const blob = await response.blob();
@@ -73,7 +81,7 @@ export default function PurchasesPage() {
       document.body.removeChild(a);
     } catch (err) {
       console.error('Download error:', err);
-      alert('Failed to download PDF');
+      alert('❌ Échec du téléchargement du PDF. Veuillez réessayer plus tard.');
     }
   };
 
@@ -139,12 +147,18 @@ export default function PurchasesPage() {
                           <h4 className="font-bold text-gray-800">{book.title}</h4>
                           <p className="text-sm text-gray-600">{book.author}</p>
                           <p className="text-[#128A41] font-semibold mt-2">{book.price} FCFA</p>
-                          <button
-                            onClick={() => handleDownload(book.id, book.title)}
-                            className="mt-3 bg-[#C0392B] text-white px-4 py-2 rounded text-sm hover:bg-black transition"
-                          >
-                            ⬇️ Download PDF
-                          </button>
+                          {book.pdfFile ? (
+                            <button
+                              onClick={() => handleDownload(book.id, book.title)}
+                              className="mt-3 bg-[#C0392B] text-white px-4 py-2 rounded text-sm hover:bg-black transition"
+                            >
+                              ⬇️ Download PDF
+                            </button>
+                          ) : (
+                            <p className="mt-3 text-sm text-gray-500 italic">
+                              📦 Livre papier - Pas de téléchargement disponible
+                            </p>
+                          )}
                         </div>
                       </div>
                     ))}

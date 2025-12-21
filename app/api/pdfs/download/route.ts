@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
+import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   try {
@@ -48,19 +49,39 @@ export async function GET(req: Request) {
       return Response.json({ error: "Access denied" }, { status: 403 });
     }
 
-    // Serve PDF file
+    // Get book details to check for Supabase PDF URL
+    const book = await prisma.book.findUnique({
+      where: { id: bookIdInt },
+      select: { pdfFile: true, pdfFileName: true, title: true },
+    });
+
+    if (!book) {
+      return Response.json({ error: "Book not found" }, { status: 404 });
+    }
+
+    // Priority 1: Use Supabase pdfFile URL if available
+    if (book.pdfFile && (book.pdfFile.startsWith('http://') || book.pdfFile.startsWith('https://'))) {
+      // Redirect to Supabase URL
+      return NextResponse.redirect(book.pdfFile);
+    }
+
+    // Priority 2: Fallback to local file (legacy support)
     const pdfPath = join(process.cwd(), "public", "pdfs", `${bookIdInt}.pdf`);
 
     if (!existsSync(pdfPath)) {
-      return Response.json({ error: "PDF not found" }, { status: 404 });
+      return Response.json({ 
+        error: "PDF not found", 
+        message: "This book does not have a downloadable PDF file. Please contact support." 
+      }, { status: 404 });
     }
 
     const pdfData = await readFile(pdfPath);
+    const filename = book.title ? `${book.title.replace(/[^a-z0-9]/gi, '_')}.pdf` : `${bookIdInt}.pdf`;
 
     return new Response(pdfData, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${bookIdInt}.pdf"`,
+        "Content-Disposition": `attachment; filename="${filename}"`,
       },
     });
   } catch (error) {
