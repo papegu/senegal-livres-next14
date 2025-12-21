@@ -8,8 +8,8 @@ export default function Home() {
       <Image
         src="/logo2.jpg"
         alt="Sénégal Livres"
-        width={500}
-        height={500}
+        width={300}
+        height={300}
         priority
         className="opacity-20 w-full h-[350px] md:h-[450px] object-contain mx-auto z-0"
       />
@@ -18,19 +18,6 @@ export default function Home() {
           Bienvenue sur Sénégal Livres
         </h1>
         <div className="bg-white/90 rounded-lg p-4 md:p-8 w-full max-w-3xl text-gray-900 text-base md:text-lg shadow-xl text-center mb-6">
-          <p className="mb-4">
-            Tout a commencé par une passion : celle des livres.<br />
-            Dans un monde où l’on court après le temps, beaucoup n’arrivent plus à trouver l’espace pour flâner dans une librairie, sentir l’odeur des pages et découvrir une histoire qui change une vie. C’est là qu’est née <b>Sénégal Livres</b>, avec une idée simple : rendre le livre accessible partout, à tout moment, en un clic.
-          </p>
-          <p className="mb-4">
-            Nous croyons que chaque livre est une rencontre. Derrière chaque couverture se cache une émotion, une leçon, une aventure. Notre mission est de permettre à chacun – étudiant, passionné, professionnel ou simple curieux – de trouver l’ouvrage qui lui parle, sans contrainte.
-          </p>
-          <p className="mb-4">
-            Notre boutique en ligne n’est pas qu’un catalogue, c’est un pont entre les auteurs et les lecteurs. Nous sélectionnons des livres qui inspirent, qui instruisent et qui divertissent. Nous voulons redonner au livre sa place dans la vie quotidienne, en le rendant plus proche, plus accessible, plus moderne.
-          </p>
-          <p className="mb-4">
-            Parce que lire, c’est grandir. Lire, c’est s’évader. Lire, c’est se construire.
-          </p>
           <div className="mb-6 flex flex-col items-center">
             <span className="text-3xl md:text-4xl font-extrabold text-green-700 mb-2">77 713 17 31</span>
             <div className="flex gap-4 mt-2">
