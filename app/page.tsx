@@ -74,5 +74,8 @@ export default function Home() {
             <b>Livraison partout sur Dakar</b> pour toute commande en ligne.<br />
             <b>Si tu achètes en ligne</b>, tu reçois aussi la version PDF du livre immédiatement après paiement !
           </p>
+        </div>
+      </div>
+    </div>
   );
 }
