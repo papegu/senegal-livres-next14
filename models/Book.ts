@@ -6,4 +6,6 @@ export interface Book {
   coverImage: string;
   stock: number;
   category: string;
+  pdfFile: string;
+  pdfFileName: string;
 }
