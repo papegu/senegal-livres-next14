@@ -269,7 +269,7 @@ export default function AdminBooksPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Price (FCFA) *
+                    Price (€) *
                   </label>
                   <input
                     type="number"
@@ -277,9 +277,9 @@ export default function AdminBooksPage() {
                     value={formData.price}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
-                    placeholder="Enter price"
+                    placeholder="Enter price in euro"
                     min="0"
-                    step="100"
+                    step="0.01"
                     required
                   />
                 </div>
@@ -399,7 +399,7 @@ export default function AdminBooksPage() {
                   <tr>
                     <th className="text-left px-4 py-3 font-semibold text-gray-800">Title</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-800">Author</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-800">Price</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-800">Price (€)</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-800">Status</th>
                     <th className="text-center px-4 py-3 font-semibold text-gray-800">eBook</th>
                     <th className="text-center px-4 py-3 font-semibold text-gray-800">Actions</th>
@@ -414,7 +414,7 @@ export default function AdminBooksPage() {
                       <td className="px-4 py-3 text-gray-800 font-medium">{book.title}</td>
                       <td className="px-4 py-3 text-gray-600">{book.author}</td>
                       <td className="px-4 py-3 text-gray-800 font-semibold text-[#128A41]">
-                        {book.price} FCFA
+                        {book.price} €
                       </td>
                       <td className="px-4 py-3">
                         <span
