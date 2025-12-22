@@ -46,7 +46,7 @@ export default function CheckoutForm({ bookId, price }: { bookId: string; price:
 
   return (
     <form onSubmit={handlePay} className="mt-6 border-t pt-4">
-      <p className="mb-4 text-lg">Montant: <strong className="text-[#128A41]">{price} FCFA</strong></p>
+      <p className="mb-4 text-lg">Montant: <strong className="text-[#128A41]">{price} €</strong></p>
 
       <div className="mb-4 p-4 bg-blue-100 border border-blue-400 rounded">
         <p className="text-blue-800">
@@ -60,7 +60,7 @@ export default function CheckoutForm({ bookId, price }: { bookId: string; price:
         disabled={loading}
         className="w-full mt-4 bg-[#128A41] text-white py-3 px-4 rounded font-semibold hover:bg-black transition disabled:bg-gray-400 text-lg"
       >
-        {loading ? "⏳ Redirection..." : `✓ Payer ${price} FCFA`}
+        {loading ? "⏳ Redirection..." : `✓ Payer ${price} €`}
       </button>
 
       {error && <p className="text-red-600 mt-3 text-center font-semibold">{error}</p>}

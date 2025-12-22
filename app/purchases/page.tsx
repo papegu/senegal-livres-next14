@@ -119,7 +119,7 @@ export default function PurchasesPage() {
                       Transaction ID: {purchase.transactionId}
                     </p>
                   </div>
-                  <p className="text-2xl font-bold text-[#128A41]">{purchase.amount} FCFA</p>
+                  <p className="text-2xl font-bold text-[#128A41]">{purchase.amount} €</p>
                 </div>
 
                 <div className="border-t pt-4">
@@ -138,7 +138,7 @@ export default function PurchasesPage() {
                         <div className="flex-1">
                           <h4 className="font-bold text-gray-800">{book.title}</h4>
                           <p className="text-sm text-gray-600">{book.author}</p>
-                          <p className="text-[#128A41] font-semibold mt-2">{book.price} FCFA</p>
+                          <p className="text-[#128A41] font-semibold mt-2">{book.price} €</p>
                           <button
                             onClick={() => handleDownload(book.id, book.title)}
                             className="mt-3 bg-[#C0392B] text-white px-4 py-2 rounded text-sm hover:bg-black transition"

@@ -32,7 +32,7 @@ export default async function BookPage({ params }: Params) {
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-[#C0392B]">{book.title}</h1>
             <p className="text-sm text-gray-600">{book.author}</p>
-            <p className="mt-4 font-semibold text-[#128A41]">{book.price} FCFA</p>
+            <p className="mt-4 font-semibold text-[#128A41]">{book.price} €</p>
             <p className="mt-4">{book.description || "Aucune description."}</p>
 
             <div className="mt-6 flex flex-col gap-2">

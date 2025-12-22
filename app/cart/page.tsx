@@ -138,7 +138,7 @@ export default function CartPage() {
 
                     <div className="text-right">
                       <p className="text-2xl font-bold text-[#128A41]">
-                        {book.price} FCFA
+                        {book.price} €
                       </p>
                       <button
                         onClick={() => removeFromCart(book.id)}
@@ -158,7 +158,7 @@ export default function CartPage() {
                 <div className="flex justify-between items-center mb-6 pb-6 border-b-2">
                   <span className="text-2xl font-bold">Total:</span>
                   <span className="text-3xl font-bold text-[#128A41]">
-                    {total} FCFA
+                    {total} €
                   </span>
                 </div>
 

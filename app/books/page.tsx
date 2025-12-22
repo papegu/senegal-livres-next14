@@ -177,7 +177,7 @@ export default function BooksPage() {
               )}
 
               <p className="mt-2 font-semibold text-[#128A41]">
-                {book.price} FCFA
+                {book.price} €
               </p>
 
               {/* Si c'est un eBook et pas de PDF, afficher option d'upload */}
