@@ -16,7 +16,7 @@ interface BookFormData {
   coverImage: string;
   status: 'available' | 'pending';
   eBook: boolean;
-  pdf?: File | null;
+  pdfFile?: File | null;
 }
 
 const initialFormData: BookFormData = {
@@ -27,7 +27,7 @@ const initialFormData: BookFormData = {
   coverImage: '',
   status: 'available',
   eBook: false,
-  pdf: null,
+  pdfFile: null,
 };
 
 export default function AdminBooksPage() {
@@ -68,7 +68,8 @@ export default function AdminBooksPage() {
     const { name, value, type } = e.target;
     if (type === 'file') {
       const file = (e.target as HTMLInputElement).files?.[0] || null;
-      setFormData(prev => ({ ...prev, [name]: file }));
+      // Remplacer pdf par pdfFile
+      setFormData(prev => ({ ...prev, pdfFile: file }));
     } else {
       setFormData(prev => ({
         ...prev,
@@ -91,7 +92,7 @@ export default function AdminBooksPage() {
       const method = editingId ? 'PUT' : 'POST';
 
       let res;
-      if (formData.pdf) {
+      if (formData.pdfFile) {
         // Envoi multipart/form-data si PDF sélectionné
         const data = new FormData();
         data.append('title', formData.title);
@@ -101,7 +102,7 @@ export default function AdminBooksPage() {
         data.append('coverImage', formData.coverImage);
         data.append('status', formData.status);
         data.append('eBook', String(formData.eBook));
-        data.append('pdf', formData.pdf);
+        data.append('pdfFile', formData.pdfFile);
         if (editingId) data.append('bookId', editingId);
 
         res = await fetch('/api/admin/books', {
@@ -152,6 +153,7 @@ export default function AdminBooksPage() {
       coverImage: book.coverImage,
       status: book.status || 'available',
       eBook: book.eBook || false,
+      pdfFile: null,
     });
     setEditingId(book.id);
     setShowForm(true);
@@ -336,7 +338,7 @@ export default function AdminBooksPage() {
                 </label>
                 <input
                   type="file"
-                  name="pdf"
+                  name="pdfFile"
                   accept="application/pdf"
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
