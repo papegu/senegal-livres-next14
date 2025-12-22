@@ -38,6 +38,16 @@ export async function GET(req: Request) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Ajout du nombre de visiteurs (exemple: table visitor ou analytics)
+    // Remplacer la requête suivante par la bonne table si besoin
+    let visitorsCount = 0;
+    try {
+      // Si vous avez une table visitor ou analytics, adaptez ici
+      visitorsCount = await prisma.visitor?.count?.() ?? 0;
+    } catch (e) {
+      visitorsCount = 0;
+    }
+
     const [transactions, booksCount] = await Promise.all([
       prisma.transaction.findMany(),
       prisma.book.count(),
@@ -51,6 +61,7 @@ export async function GET(req: Request) {
         .filter((t: any) => t.status === "validated")
         .reduce((sum: number, t: any) => sum + (t.amount || 0), 0),
       totalBooks: booksCount,
+      visitorsCount,
     };
 
     return Response.json(stats);
