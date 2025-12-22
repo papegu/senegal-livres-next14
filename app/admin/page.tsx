@@ -10,7 +10,6 @@ interface DashboardStats {
   cancelledTransactions: number;
   totalRevenue: number;
   totalBooks: number;
-  visitorsCount: number;
 }
 
 export default function AdminDashboard() {
@@ -88,7 +87,7 @@ export default function AdminDashboard() {
         {stats && (
           <>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <div className="bg-white rounded-lg shadow-md p-6">
                 <p className="text-gray-600 text-sm">Successful Transactions</p>
                 <p className="text-4xl font-bold text-green-600">{stats.successTransactions}</p>
@@ -104,10 +103,6 @@ export default function AdminDashboard() {
               <div className="bg-white rounded-lg shadow-md p-6">
                 <p className="text-gray-600 text-sm">Total Revenue</p>
                 <p className="text-4xl font-bold text-[#128A41]">{stats.totalRevenue.toLocaleString()} FCFA</p>
-              </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <p className="text-gray-600 text-sm">Nombre de visiteurs</p>
-                <p className="text-4xl font-bold text-blue-600">{stats.visitorsCount}</p>
               </div>
             </div>
 

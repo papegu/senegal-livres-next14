@@ -70,67 +70,62 @@ function PaymentSuccessContent() {
   return (
     <div className="min-h-screen bg-[#F4E9CE] flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full text-center">
-        <div className="text-5xl mb-4">
-          {loading ? '⏳' : '✅'}
-        </div>
-        <h1 className="text-3xl font-bold text-[#128A41] mb-4">
-          {loading ? 'Processing...' : 'Payment Successful'}
-        </h1>
+        <div className="text-5xl mb-4">{loading ? '⏳' : '✅'}</div>
+        <h1 className="text-3xl font-bold text-[#128A41] mb-4">{loading ? 'Processing...' : 'Payment Successful'}</h1>
         <p className="text-gray-600 mb-6">{message}</p>
-
         {showDeliveryForm && !deliverySubmitted ? (
-          <form
-            className="space-y-4 text-left"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              // TODO: Envoyer les infos de livraison à l'API (à implémenter côté backend)
-              setDeliverySubmitted(true);
-              setShowDeliveryForm(false);
-              setMessage('✅ Merci ! Vos informations de livraison ont été enregistrées.');
-            }}
-          >
-            <div>
-              <label className="block text-sm font-semibold mb-1">Numéro WhatsApp</label>
-              <input
-                type="tel"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded"
-                value={deliveryInfo.whatsapp}
-                onChange={e => setDeliveryInfo(info => ({ ...info, whatsapp: e.target.value }))}
-                placeholder="Ex: 77 123 45 67"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1">Adresse de livraison</label>
-              <input
-                type="text"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded"
-                value={deliveryInfo.address}
-                onChange={e => setDeliveryInfo(info => ({ ...info, address: e.target.value }))}
-                placeholder="Votre adresse complète"
-              />
-            </div>
-            {/* Localisation supprimée */}
-            <button
-              type="submit"
-              className="w-full bg-[#128A41] text-white py-3 rounded hover:bg-green-700 transition font-bold"
+          <>
+            <form
+              className="space-y-4 text-left"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setDeliverySubmitted(true);
+                setShowDeliveryForm(false);
+                setMessage('✅ Merci ! Vos informations de livraison ont été enregistrées.');
+              }}
             >
-              Envoyer
-            </button>
-          </form>
-                {/* Chatbox marchandage et contact admin (à intégrer dans une vraie app de chat ou via un service externe) */}
-                <div className="mt-8">
-                  <h2 className="text-xl font-bold mb-2">💬 Marchander ou discuter avec l'administrateur</h2>
-                  <div className="border rounded p-4 bg-gray-50">
-                    <p className="mb-2 text-gray-700">Vous pouvez discuter du prix, négocier les frais de transport si vous êtes hors de Dakar, ou demander à l'administrateur de rechercher des livres spécifiques pour vous.</p>
-                    <div className="mb-2">
-                      <input type="text" className="w-full px-3 py-2 border rounded mb-2" placeholder="Votre message..." />
-                      <button className="bg-[#128A41] text-white px-4 py-2 rounded font-bold w-full">Envoyer</button>
-                    </div>
-                    <div className="text-xs text-gray-500">(Chatbox démo, à connecter à un backend ou service de chat pour la production)</div>
-                  </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Numéro WhatsApp</label>
+                <input
+                  type="tel"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded"
+                  value={deliveryInfo.whatsapp}
+                  onChange={e => setDeliveryInfo(info => ({ ...info, whatsapp: e.target.value }))}
+                  placeholder="Ex: 77 123 45 67"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Adresse de livraison</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded"
+                  value={deliveryInfo.address}
+                  onChange={e => setDeliveryInfo(info => ({ ...info, address: e.target.value }))}
+                  placeholder="Votre adresse complète"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-[#128A41] text-white py-3 rounded hover:bg-green-700 transition font-bold"
+              >
+                Envoyer
+              </button>
+            </form>
+            {/* Chatbox marchandage et contact admin (à intégrer dans une vraie app de chat ou via un service externe) */}
+            <div className="mt-8">
+              <h2 className="text-xl font-bold mb-2">💬 Marchander ou discuter avec l'administrateur</h2>
+              <div className="border rounded p-4 bg-gray-50">
+                <p className="mb-2 text-gray-700">Vous pouvez discuter du prix, négocier les frais de transport si vous êtes hors de Dakar, ou demander à l'administrateur de rechercher des livres spécifiques pour vous.</p>
+                <div className="mb-2">
+                  <input type="text" className="w-full px-3 py-2 border rounded mb-2" placeholder="Votre message..." />
+                  <button className="bg-[#128A41] text-white px-4 py-2 rounded font-bold w-full">Envoyer</button>
                 </div>
+                <div className="text-xs text-gray-500">(Chatbox démo, à connecter à un backend ou service de chat pour la production)</div>
+              </div>
+            </div>
+          </>
         ) : (
           <div className="space-y-3">
             <a
