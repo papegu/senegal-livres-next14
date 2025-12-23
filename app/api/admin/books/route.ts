@@ -1,3 +1,24 @@
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const bookId = searchParams.get('id');
+    if (!bookId) {
+      return NextResponse.json({ success: false, error: 'Missing book id' }, { status: 400 });
+    }
+
+    // Delete the book from Supabase
+    const { error } = await supabase
+      .from('book')
+      .delete()
+      .eq('id', bookId);
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ success: true, message: 'Book deleted' }, { status: 200 });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: 'Failed to delete book' }, { status: 500 });
+  }
+}
 export async function PUT(request: Request) {
   try {
     let formData, body;
@@ -19,8 +40,8 @@ export async function PUT(request: Request) {
 
     let pdfFile = body.pdfFile || '';
     let pdfFileName = body.pdfFileName || '';
-    if (formData && formData.get('pdf')) {
-      const file = formData.get('pdf');
+    if (formData && formData.get('pdfFile')) {
+      const file = formData.get('pdfFile');
       if (file && typeof file === 'object' && 'arrayBuffer' in file) {
         const buffer = Buffer.from(await file.arrayBuffer());
         pdfFileName = `${body.bookId}_${Date.now()}.pdf`;
@@ -128,8 +149,8 @@ export async function POST(request: Request) {
     let pdfFileName = '';
 
     // Si un fichier PDF est uploadé
-    if (formData && formData.get('pdf')) {
-      const file = formData.get('pdf');
+    if (formData && formData.get('pdfFile')) {
+      const file = formData.get('pdfFile');
       if (file && typeof file === 'object' && 'arrayBuffer' in file) {
         const buffer = Buffer.from(await file.arrayBuffer());
         pdfFileName = `${uuid}_${Date.now()}.pdf`;
