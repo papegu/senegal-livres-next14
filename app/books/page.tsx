@@ -224,7 +224,7 @@ export default function BooksPage() {
                   onClick={() => handleAddToCart(book.id, book.title)}
                   className="flex-1 bg-[#128A41] text-white py-2 rounded hover:bg-green-700 transition"
                 >
-                  Add to Cart
+                  Ajouter au panier
                 </button>
                 <a
                   href={`/books/${book.id}`}
