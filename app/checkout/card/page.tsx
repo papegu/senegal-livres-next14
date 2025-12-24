@@ -117,13 +117,13 @@ export default function CardCheckoutPage() {
             {cartItems.map((item) => (
               <div key={item.book.id} className="flex justify-between text-gray-700">
                 <span>{item.book.title}</span>
-                <span className="font-semibold">{item.book.price} FCFA</span>
+                <span className="font-semibold">{item.book.price} €</span>
               </div>
             ))}
           </div>
           <div className="border-t pt-4 flex justify-between text-lg font-bold">
             <span>Total:</span>
-            <span className="text-[#128A41]">{total} FCFA</span>
+            <span className="text-[#128A41]">{total} €</span>
           </div>
         </div>
 

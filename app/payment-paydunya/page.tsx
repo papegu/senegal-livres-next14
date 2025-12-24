@@ -123,7 +123,7 @@ function PayDunyaMockContent() {
               Montant
             </label>
             <div className="text-2xl font-bold text-[#128A41]">
-              {amount} FCFA
+              {amount} €
             </div>
           </div>
         </div>

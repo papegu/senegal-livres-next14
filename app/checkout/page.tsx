@@ -220,7 +220,7 @@ export default function CheckoutPage() {
                         <p className="text-sm text-gray-600">{item.book.author}</p>
                       </div>
                     </div>
-                    <p className="font-bold text-[#128A41]">{item.book.price} FCFA</p>
+                    <p className="font-bold text-[#128A41]">{item.book.price} €</p>
                   </div>
                 ))}
               </div>
@@ -231,7 +231,7 @@ export default function CheckoutPage() {
           <div className="bg-white rounded-lg shadow-md p-6 h-fit sticky top-8">
             <div className="mb-6">
               <h3 className="text-xl font-bold text-gray-800 mb-4">Total</h3>
-              <p className="text-3xl font-bold text-[#128A41]">{total} FCFA</p>
+              <p className="text-3xl font-bold text-[#128A41]">{total} €</p>
               <p className="text-sm text-gray-600 mt-2">{cartItems.length} book(s)</p>
             </div>
 

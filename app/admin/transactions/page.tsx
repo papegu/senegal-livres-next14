@@ -201,7 +201,7 @@ export default function AdminTransactionsPage() {
                     <td className="px-6 py-4 text-gray-800 font-mono text-sm">{transaction.orderId}</td>
                     <td className="px-6 py-4 text-gray-800 font-mono text-sm">{transaction.userId || 'N/A'}</td>
                     <td className="px-6 py-4 font-semibold text-[#128A41]">
-                      {transaction.amount.toLocaleString()} FCFA
+                      {transaction.amount.toLocaleString()} €
                     </td>
                     <td className="px-6 py-4 text-gray-800">{transaction.paymentMethod || transaction.method || 'N/A'}</td>
                     <td className="px-6 py-4">
