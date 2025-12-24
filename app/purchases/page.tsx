@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Book } from '@/types/Book';
+import { isValidHttpUrl } from '@/utils/url';
 
 interface Purchase {
   id: string;
@@ -57,6 +58,23 @@ export default function PurchasesPage() {
 
   const handleDownload = async (bookId: string, bookTitle: string) => {
     try {
+      // First, try to get the book's pdfFile URL
+      const book = books.find(b => b.id === bookId);
+      
+      // If pdfFile exists and is a valid URL (Supabase), download directly
+      if (book?.pdfFile && isValidHttpUrl(book.pdfFile)) {
+        // Direct link to Supabase - open in new tab for download
+        const a = document.createElement('a');
+        a.href = book.pdfFile;
+        a.download = `${bookTitle}.pdf`;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        return;
+      }
+
+      // Fallback: use API endpoint
       const response = await fetch(`/api/pdfs/download?bookId=${bookId}`);
       if (!response.ok) {
         throw new Error('Failed to download PDF');

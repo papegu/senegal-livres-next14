@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import bcryptjs from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signJwt } from "@/utils/jwt";
+import { isProduction } from "@/utils/environment";
 
 // POST /api/auth
 // Body: { action: "login" | "register", email, password, name? }
@@ -67,15 +68,17 @@ export async function POST(req: Request) {
         { status: 200 }
       );
 
-      // Set token in HTTP-only cookie (no domain, always secure, sameSite: 'lax')
+      // Set token in HTTP-only cookie
+      // Only use secure flag in production to avoid issues in development
+      // Use 'lax' sameSite to allow cookie to be sent with top-level navigation
       response.cookies.set(
         "auth_token",
         token,
         {
           httpOnly: true,
-          secure: true,
+          secure: isProduction(), // Only secure in production
           sameSite: "lax",
-          maxAge: 7 * 24 * 60 * 60,
+          maxAge: 7 * 24 * 60 * 60, // 7 days
           path: "/"
         }
       );
