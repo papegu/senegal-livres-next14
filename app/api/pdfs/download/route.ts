@@ -40,6 +40,7 @@ export async function GET(req: Request) {
       return Response.json({ error: "Invalid bookId" }, { status: 400 });
     }
 
+    // Verify user has purchased this book
     const purchase = await prisma.purchase.findFirst({
       where: { userId, bookId: bookIdInt },
     });
@@ -48,7 +49,51 @@ export async function GET(req: Request) {
       return Response.json({ error: "Access denied" }, { status: 403 });
     }
 
-    // Serve PDF file
+    // Get book to check for pdfFile (Supabase URL)
+    const book = await prisma.book.findUnique({
+      where: { id: bookIdInt },
+      select: { pdfFile: true, title: true },
+    });
+
+    if (!book) {
+      return Response.json({ error: "Book not found" }, { status: 404 });
+    }
+
+    // Priority 1: Use Supabase pdfFile URL if available
+    if (book.pdfFile && book.pdfFile.trim() !== '') {
+      // If pdfFile is a full URL (Supabase Storage), redirect to it
+      if (book.pdfFile.startsWith('http://') || book.pdfFile.startsWith('https://')) {
+        console.log(`[PDF Download] Redirecting to Supabase URL for book ${bookIdInt}`);
+        
+        // Fetch the PDF from Supabase and stream it
+        try {
+          const pdfResponse = await fetch(book.pdfFile);
+          if (!pdfResponse.ok) {
+            throw new Error(`Failed to fetch PDF from Supabase: ${pdfResponse.status}`);
+          }
+          
+          const pdfData = await pdfResponse.arrayBuffer();
+          // Sanitize filename to prevent header injection
+          const safeFilename = (book.title || String(bookIdInt))
+            .replace(/[^\w\s-]/g, '') // Remove special chars
+            .replace(/\s+/g, '_')      // Replace spaces with underscores
+            .substring(0, 100);        // Limit length
+          
+          return new Response(pdfData, {
+            headers: {
+              "Content-Type": "application/pdf",
+              "Content-Disposition": `attachment; filename="${safeFilename}.pdf"`,
+            },
+          });
+        } catch (fetchError) {
+          console.error(`[PDF Download] Error fetching from Supabase:`, fetchError);
+          // Fall through to local storage fallback
+        }
+      }
+    }
+
+    // Priority 2: Fallback to local file storage
+    console.log(`[PDF Download] Using local storage for book ${bookIdInt}`);
     const pdfPath = join(process.cwd(), "public", "pdfs", `${bookIdInt}.pdf`);
 
     if (!existsSync(pdfPath)) {
@@ -56,11 +101,17 @@ export async function GET(req: Request) {
     }
 
     const pdfData = await readFile(pdfPath);
+    
+    // Sanitize filename to prevent header injection
+    const safeFilename = (book.title || String(bookIdInt))
+      .replace(/[^\w\s-]/g, '') // Remove special chars
+      .replace(/\s+/g, '_')      // Replace spaces with underscores
+      .substring(0, 100);        // Limit length
 
     return new Response(pdfData, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${bookIdInt}.pdf"`,
+        "Content-Disposition": `attachment; filename="${safeFilename}.pdf"`,
       },
     });
   } catch (error) {
