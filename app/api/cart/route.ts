@@ -9,6 +9,10 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
+    // Guard: ensure DB is configured to avoid server-side exceptions
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json({ error: "Service indisponible: base de données non configurée" }, { status: 503 });
+    }
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value;
 
@@ -45,6 +49,10 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    // Guard: ensure DB is configured to avoid server-side exceptions
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json({ error: "Service indisponible: base de données non configurée" }, { status: 503 });
+    }
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value;
 
