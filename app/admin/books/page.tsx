@@ -17,6 +17,12 @@ interface BookFormData {
   status: 'available' | 'pending';
   eBook: boolean;
   pdfFile?: File | null;
+  // Cloudflare / SEO (optionnels)
+  slug?: string;
+  cover_image_url?: string;
+  pdf_r2_key?: string;
+  pdf_r2_url?: string;
+  has_ebook?: boolean;
 }
 
 const initialFormData: BookFormData = {
@@ -28,6 +34,11 @@ const initialFormData: BookFormData = {
   status: 'available',
   eBook: false,
   pdfFile: null,
+  slug: '',
+  cover_image_url: '',
+  pdf_r2_key: '',
+  pdf_r2_url: '',
+  has_ebook: false,
 };
 
 export default function AdminBooksPage() {
@@ -103,6 +114,12 @@ export default function AdminBooksPage() {
         data.append('status', formData.status);
         data.append('eBook', String(formData.eBook));
         data.append('pdfFile', formData.pdfFile);
+        // Champs Cloudflare optionnels
+        if (formData.slug) data.append('slug', formData.slug);
+        if (formData.cover_image_url) data.append('cover_image_url', formData.cover_image_url);
+        if (formData.pdf_r2_key) data.append('pdf_r2_key', formData.pdf_r2_key);
+        if (formData.pdf_r2_url) data.append('pdf_r2_url', formData.pdf_r2_url);
+        if (typeof formData.has_ebook === 'boolean') data.append('has_ebook', String(formData.has_ebook));
         if (editingId) data.append('bookId', editingId);
 
         res = await fetch('/api/admin/books', {
@@ -154,6 +171,12 @@ export default function AdminBooksPage() {
       status: book.status || 'available',
       eBook: book.eBook || false,
       pdfFile: null,
+      // Préremplir les champs Cloudflare si présents
+      slug: book.slug || '',
+      cover_image_url: book.cover_image_url || '',
+      pdf_r2_key: book.pdf_r2_key || '',
+      pdf_r2_url: book.pdf_r2_url || '',
+      has_ebook: !!book.has_ebook,
     });
     setEditingId(book.id);
     setShowForm(true);
@@ -317,6 +340,54 @@ export default function AdminBooksPage() {
                 />
               </div>
 
+              {/* Champs Cloudflare / SEO (optionnels) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Slug (Cloudflare) - optionnel</label>
+                  <input
+                    type="text"
+                    name="slug"
+                    value={formData.slug || ''}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                    placeholder="ex: l-art-de-la-lecture"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Cover Image (R2 URL) - optionnel</label>
+                  <input
+                    type="url"
+                    name="cover_image_url"
+                    value={formData.cover_image_url || ''}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                    placeholder="https://cdn.example/r2/covers/123.jpg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">PDF R2 Key - optionnel</label>
+                  <input
+                    type="text"
+                    name="pdf_r2_key"
+                    value={formData.pdf_r2_key || ''}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                    placeholder="ebooks/123.pdf"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">PDF R2 URL - optionnel</label>
+                  <input
+                    type="url"
+                    name="pdf_r2_url"
+                    value={formData.pdf_r2_url || ''}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                    placeholder="https://cdn.example/r2/ebooks/123.pdf"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Description
@@ -349,14 +420,14 @@ export default function AdminBooksPage() {
               <div className="flex items-center">
                 <input
                   type="checkbox"
-                  name="eBook"
-                  id="eBook"
-                  checked={formData.eBook}
-                  onChange={(e) => setFormData(prev => ({ ...prev, eBook: e.target.checked }))}
+                  name="has_ebook"
+                  id="has_ebook"
+                  checked={!!formData.has_ebook}
+                  onChange={(e) => setFormData(prev => ({ ...prev, has_ebook: e.target.checked, eBook: e.target.checked }))}
                   className="w-4 h-4 text-[#128A41] border-gray-300 rounded focus:ring-[#128A41]"
                 />
-                <label htmlFor="eBook" className="ml-2 text-sm font-semibold text-gray-700">
-                  📱 Has eBook version (electronic version available)
+                <label htmlFor="has_ebook" className="ml-2 text-sm font-semibold text-gray-700">
+                  📱 Has eBook (Cloudflare) - optionnel
                 </label>
               </div>
 
