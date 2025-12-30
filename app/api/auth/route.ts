@@ -49,6 +49,8 @@ export async function POST(req: Request) {
       }
 
       // Generate JWT token
+      // REQUIRED: JWT_SECRET must be set in environment variables (minimum 16 characters)
+      // See AUTHENTICATION_GUIDE.md for setup and troubleshooting
       if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) {
         console.error("[auth/login] Missing or weak JWT_SECRET in environment");
         return NextResponse.json(

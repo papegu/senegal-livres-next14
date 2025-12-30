@@ -51,6 +51,7 @@ export default function BooksPage() {
       const res = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({ bookId, action: "add" }),
       });
 
