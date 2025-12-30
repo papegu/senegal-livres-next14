@@ -490,9 +490,12 @@ export default function AdminBooksPage() {
                   <tr>
                     <th className="text-left px-4 py-3 font-semibold text-gray-800">Title</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-800">Author</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-800">Slug</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-800">Price (€)</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-800">Status</th>
-                    <th className="text-center px-4 py-3 font-semibold text-gray-800">eBook</th>
+                    <th className="text-center px-4 py-3 font-semibold text-gray-800">Has eBook</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-800">PDF (R2)</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-800">Cover (R2)</th>
                     <th className="text-center px-4 py-3 font-semibold text-gray-800">Actions</th>
                   </tr>
                 </thead>
@@ -504,6 +507,7 @@ export default function AdminBooksPage() {
                     >
                       <td className="px-4 py-3 text-gray-800 font-medium">{book.title}</td>
                       <td className="px-4 py-3 text-gray-600">{book.author}</td>
+                      <td className="px-4 py-3 text-gray-600">{book.slug || '—'}</td>
                       <td className="px-4 py-3 text-gray-800 font-semibold text-[#128A41]">
                         {book.price} €
                       </td>
@@ -520,8 +524,22 @@ export default function AdminBooksPage() {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className="text-lg">
-                          {book.eBook ? '📱' : '📖'}
+                          {book.has_ebook || book.eBook ? '📱' : '📖'}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 text-blue-700 underline">
+                        {book.pdf_r2_url ? (
+                          <a href={book.pdf_r2_url} target="_blank" rel="noreferrer">PDF</a>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-blue-700 underline">
+                        {book.cover_image_url ? (
+                          <a href={book.cover_image_url} target="_blank" rel="noreferrer">Cover</a>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex gap-2 justify-center">
