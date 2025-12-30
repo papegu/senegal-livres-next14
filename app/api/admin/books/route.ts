@@ -135,6 +135,34 @@ import { v4 as uuidv4 } from 'uuid';
 // ⚠️ OBLIGATOIRE : forcer Node.js (PayDunya, fs, crypto, etc.)
 export const runtime = "nodejs";
 
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+async function ensureUniqueSlug(base: string): Promise<string> {
+  let candidate = base;
+  let counter = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from('book')
+      .select('id, slug')
+      .eq('slug', candidate)
+      .limit(1);
+    if (error) throw new Error(error.message);
+    if (!data || data.length === 0) {
+      return candidate;
+    }
+    counter += 1;
+    candidate = `${base}-${counter}`;
+    if (counter > 50) throw new Error('Too many slug conflicts');
+  }
+}
+
 export async function GET() {
   try {
     // Récupérer tous les livres depuis Supabase
@@ -215,10 +243,18 @@ export async function POST(request: Request) {
       pdfFileName = body.pdfFileName || '';
     }
 
-    // Insertion dans Supabase
+    // Slug unique: partir de body.slug ou du titre
+    const title = String(body.title || '').trim();
+    const rawSlug = (body.slug ?? '').toString().trim();
+    let newSlugBase = rawSlug || slugify(title);
+    if (!newSlugBase) newSlugBase = `book-${Date.now()}`;
+    const uniqueSlug = await ensureUniqueSlug(newSlugBase);
+
+    // Insertion dans Supabase avec slug unique
+    const insertPayload = { ...body, uuid, pdfFile, pdfFileName, slug: uniqueSlug };
     const { data: book, error } = await supabase
       .from('book')
-      .insert([{ ...body, uuid, pdfFile, pdfFileName }])
+      .insert([insertPayload])
       .select()
       .single();
     if (error) {
