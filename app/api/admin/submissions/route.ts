@@ -85,12 +85,24 @@ export async function PUT(req: Request) {
           data: { status: 'approved', reviewedAt: new Date() },
         });
 
+        // Extract desired price from reviewNotes JSON if present
+        let priceToUse = 0;
+        try {
+          if (sub.reviewNotes) {
+            const extra = JSON.parse(sub.reviewNotes || '{}');
+            if (extra && typeof extra.price !== 'undefined') {
+              const p = parseFloat(String(extra.price).replace(',', '.'));
+              if (Number.isFinite(p)) priceToUse = p;
+            }
+          }
+        } catch {}
+
         await prisma.book.create({
           data: {
             uuid: uuidv4(),
             title: sub.title,
             author: sub.author,
-            price: (sub as any).price ? Number((sub as any).price) : 0,
+            price: priceToUse,
             description: sub.description,
             coverImage,
             category: sub.category,

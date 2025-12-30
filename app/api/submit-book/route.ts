@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const file = formData.get('pdf') as File;
     const title = formData.get('title') as string;
     const author = formData.get('author') as string;
-    const price = formData.get('price') as string;
+    const priceRaw = formData.get('price') as string;
     const description = formData.get('description') as string;
     const category = formData.get('category') as string;
     const eBook = formData.get('eBook') === 'true';
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No PDF file provided' }, { status: 400 });
     }
 
-    if (!title || !author || !price || !category) {
+    if (!title || !author || !priceRaw || !category) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -43,6 +43,16 @@ export async function POST(req: Request) {
     // Check file size (50MB limit)
     if (file.size > 50 * 1024 * 1024) {
       return NextResponse.json({ error: 'File size exceeds 50MB limit' }, { status: 400 });
+    }
+
+    // Normalize & validate price (allow comma)
+    const priceStr = String(priceRaw).replace(/\s/g, '').replace(',', '.');
+    const price = parseFloat(priceStr);
+    if (!Number.isFinite(price)) {
+      return NextResponse.json({ error: 'Invalid price format' }, { status: 400 });
+    }
+    if (price < 0 || price > 1500) {
+      return NextResponse.json({ error: 'Price must be between 0 and 1500 euros' }, { status: 400 });
     }
 
     // Upload PDF to Supabase Storage (avoid filesystem writes in serverless)

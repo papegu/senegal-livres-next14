@@ -92,11 +92,25 @@ export default function SubmitBookPage() {
         return;
       }
 
+      // Normalize and validate price (allow comma or dot)
+      const normalizedPriceStr = (formData.price || '').replace(/\s/g, '').replace(',', '.');
+      const priceNum = parseFloat(normalizedPriceStr);
+      if (Number.isNaN(priceNum)) {
+        setError('Le prix doit être un nombre (utilisez "," ou ".")');
+        setLoading(false);
+        return;
+      }
+      if (priceNum < 0 || priceNum > 1500) {
+        setError('Le prix doit être compris entre 0 et 1500 €');
+        setLoading(false);
+        return;
+      }
+
       // Create FormData for file upload
       const uploadFormData = new FormData();
       uploadFormData.append('title', formData.title);
       uploadFormData.append('author', formData.author);
-      uploadFormData.append('price', formData.price);
+      uploadFormData.append('price', String(priceNum));
       uploadFormData.append('description', formData.description);
       uploadFormData.append('category', formData.category);
       uploadFormData.append('eBook', String(formData.eBook));
@@ -117,8 +131,22 @@ export default function SubmitBookPage() {
       });
 
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || 'Failed to submit book');
+        // Try to parse JSON; if not JSON, fallback to text (e.g., Request Entity Too Large)
+        let message = 'Failed to submit book';
+        let status = res.status;
+        try {
+          const errData = await res.json();
+          message = errData.error || message;
+        } catch {
+          try {
+            const txt = await res.text();
+            message = txt || message;
+          } catch {}
+        }
+        if (status === 413 || /Request Entity Too Large/i.test(message)) {
+          message = 'Fichier trop volumineux (limite hébergeur atteinte). Réduisez le PDF (~4–5 Mo) ou contactez-nous.';
+        }
+        throw new Error(message);
       }
 
       setSuccess('✓ Book submitted successfully! The admin will review it soon.');
@@ -233,16 +261,15 @@ export default function SubmitBookPage() {
                   Prix (€) *
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   name="price"
                   value={formData.price}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
-                  placeholder="Enter price"
-                  min="0"
-                  step="100"
+                  placeholder="ex: 12,50 ou 12.50"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">Entre 0 et 1500 € (virgule ou point autorisé)</p>
               </div>
             </div>
 
