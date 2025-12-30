@@ -50,6 +50,15 @@ export default function AdminBooksPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
+  // Client-side slugify helper (UI only)
+  const slugify = (input: string) =>
+    input
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+
   useEffect(() => {
     fetchBooks();
   }, []);
@@ -79,14 +88,29 @@ export default function AdminBooksPage() {
     const { name, value, type } = e.target;
     if (type === 'file') {
       const file = (e.target as HTMLInputElement).files?.[0] || null;
-      // Remplacer pdf par pdfFile
       setFormData(prev => ({ ...prev, pdfFile: file }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: name === 'price' ? (value === '' ? '' : Number(value)) : value,
-      }));
+      return;
     }
+
+    if (name === 'title') {
+      const nextTitle = value;
+      setFormData(prev => {
+        const autoSlugForPrevTitle = slugify(prev.title || '');
+        const slugWasAuto = !prev.slug || prev.slug === autoSlugForPrevTitle;
+        const nextAutoSlug = slugify(nextTitle || '');
+        return {
+          ...prev,
+          title: nextTitle,
+          slug: slugWasAuto ? nextAutoSlug : prev.slug,
+        };
+      });
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'price' ? (value === '' ? '' : Number(value)) : value,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -370,6 +394,17 @@ export default function AdminBooksPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
                     placeholder="ex: l-art-de-la-lecture"
                   />
+                  <div className="text-xs text-gray-500 mt-1">
+                    Si laissé vide ou dérivé du titre, un slug sera généré automatiquement.
+                    En cas de conflit, un suffixe numérique sera ajouté côté serveur.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, slug: slugify(prev.title || '') }))}
+                    className="mt-2 text-xs bg-gray-200 text-gray-800 px-2 py-1 rounded hover:bg-gray-300"
+                  >
+                    Générer depuis le titre
+                  </button>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Cover Image (R2 URL) - optionnel</label>
