@@ -111,6 +111,60 @@ export async function POST(req: Request) {
               console.error('[PayDunya Callback] Error sending eBooks:', emailError);
             }
           }
+
+          // If payment failed/cancelled: send immediate email notification (no persistence)
+          if (!isSuccess) {
+            try {
+              // Attempt to extract customer phone from known fields without storing
+              const phoneCandidates: Array<string | undefined> = [
+                payload?.customer?.phone,
+                payload?.customer?.telephone,
+                payload?.invoice?.customer?.phone,
+                payload?.invoice?.customer?.telephone,
+                payload?.custom_data?.phone,
+                payload?.phone,
+                payload?.msisdn,
+              ].map(v => (typeof v === 'string' ? v : undefined));
+              const customerPhone = phoneCandidates.find(Boolean) || undefined;
+
+              // Determine book title concerned (first in list if multiple)
+              let bookTitle: string | undefined = undefined;
+              const parsedBookIds = (() => {
+                try { return JSON.parse(updated.bookIds); } catch { return []; }
+              })();
+              const bookIdsArray = Array.isArray(parsedBookIds)
+                ? parsedBookIds
+                : typeof updated.bookIds === 'string'
+                  ? updated.bookIds.split(',').map((v: string) => v.trim()).filter(Boolean)
+                  : [];
+              if (bookIdsArray.length > 0) {
+                const firstId = Number(bookIdsArray[0]);
+                if (!Number.isNaN(firstId)) {
+                  const book = await prisma.book.findUnique({ where: { id: firstId } });
+                  bookTitle = book?.title || undefined;
+                }
+              }
+
+              const transactionRef = updated.uuid || updated.orderId || invoiceToken || '';
+              const timestampIso = new Date().toISOString();
+
+              // Call internal email route to send notification
+              const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+              const notifyRes = await fetch(`${baseUrl}/api/email/notify-payment-fail`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  transactionRef,
+                  bookTitle,
+                  customerPhone,
+                  timestampIso,
+                }),
+              });
+              console.log('[PayDunya Callback] Failure notification status:', notifyRes.status);
+            } catch (notifyErr) {
+              console.error('[PayDunya Callback] Error sending failure notification:', notifyErr);
+            }
+          }
         } else {
           console.warn('[PayDunya Callback] ⚠️  Transaction not found with orderId:', orderId);
         }
