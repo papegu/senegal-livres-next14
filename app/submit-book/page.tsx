@@ -153,6 +153,15 @@ export default function SubmitBookPage() {
             Share your book with our community! Submit your PDF and provide book details. 
             Our admin team will review and add approved books to the catalog.
           </p>
+          <div className="text-sm text-gray-700 mb-6">
+            <p className="font-semibold mb-2">Quick guide (English):</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Required</strong>: Title, Author, Category, Price, and PDF file.</li>
+              <li><strong>Optional</strong>: Description, Slug, Cover Image (R2 URL), PDF R2 Key/URL, “Has eBook”, Author Email/Phone, Physical Address.</li>
+              <li><strong>Tips</strong>: If an eBook is available, add the PDF R2 URL for faster delivery; the Slug helps SEO.</li>
+              <li><strong>Privacy</strong>: Your contact details are used only to coordinate physical delivery if needed.</li>
+            </ul>
+          </div>
 
           {error && (
             <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
