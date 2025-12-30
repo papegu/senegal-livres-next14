@@ -10,7 +10,7 @@ interface Submission {
   description: string;
   category: string;
   eBook: boolean;
-  pdfPath: string;
+  pdfFile: string;
   status: 'pending' | 'approved' | 'rejected';
   submittedAt: string;
   coverImage?: string;
@@ -232,7 +232,7 @@ export default function AdminSubmissionsPage() {
                     </p>
 
                     <a
-                      href={submission.pdfPath}
+                      href={submission.pdfFile}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-4 inline-block text-[#128A41] hover:underline font-semibold"
