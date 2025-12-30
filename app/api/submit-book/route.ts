@@ -18,6 +18,15 @@ export async function POST(req: Request) {
     const description = formData.get('description') as string;
     const category = formData.get('category') as string;
     const eBook = formData.get('eBook') === 'true';
+    // Nouveaux champs optionnels
+    const slug = (formData.get('slug') as string) || '';
+    const cover_image_url = (formData.get('cover_image_url') as string) || '';
+    const pdf_r2_key = (formData.get('pdf_r2_key') as string) || '';
+    const pdf_r2_url = (formData.get('pdf_r2_url') as string) || '';
+    const has_ebook = formData.get('has_ebook') === 'true';
+    const authorEmail = (formData.get('authorEmail') as string) || '';
+    const authorPhone = (formData.get('authorPhone') as string) || '';
+    const address = (formData.get('address') as string) || '';
 
     if (!file) {
       return NextResponse.json({ error: 'No PDF file provided' }, { status: 400 });
@@ -55,6 +64,20 @@ export async function POST(req: Request) {
     await writeFile(filepath, buffer);
 
     // Create submission record in database
+    // Encapsuler les champs additionnels dans reviewNotes au format JSON
+    const extra = {
+      price,
+      eBook,
+      slug,
+      cover_image_url,
+      pdf_r2_key,
+      pdf_r2_url,
+      has_ebook,
+      authorEmail,
+      authorPhone,
+      address,
+    };
+
     const submission = await prisma.submission.create({
       data: {
         uuid: uuidv4(),
@@ -66,7 +89,7 @@ export async function POST(req: Request) {
         pdfFile: `/submissions/${filename}`,
         pdfFileName: filename,
         status: 'pending',
-        reviewNotes: `price=${price || ''}; ebook=${eBook}`,
+        reviewNotes: JSON.stringify(extra),
       },
     });
 

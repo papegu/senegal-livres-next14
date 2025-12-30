@@ -77,3 +77,44 @@ export function renderFailNotification(params: {
     </div>
   `;
 }
+
+export function renderPurchaseDeliveryEmail(params: {
+  toEmail: string;
+  deliveries: Array<{ title: string; downloadUrl?: string | null; hasPdf?: boolean; r2Url?: string | null }>;
+  etaMinutes?: number | null;
+}) {
+  const { toEmail, deliveries, etaMinutes } = params;
+  const anyDownload = deliveries.some(d => d.downloadUrl || d.r2Url);
+  const listItems = deliveries.map(d => {
+    const link = d.r2Url || d.downloadUrl;
+    if (link) {
+      return `<li><strong>${d.title}</strong>: <a href="${link}">Télécharger votre eBook</a></li>`;
+    }
+    return `<li><strong>${d.title}</strong>: version physique — nous allons organiser la livraison.</li>`;
+  }).join('');
+
+  const header = anyDownload
+    ? 'Vos eBooks sont prêts !'
+    : 'Confirmation de paiement — livraison physique à organiser';
+
+  const physicalNote = anyDownload
+    ? ''
+    : `<p>Merci pour votre achat. Pour la livraison physique, répondez à ce message avec :</p>
+       <ul>
+         <li>Votre nom complet</li>
+         <li>Adresse de livraison</li>
+         <li>Numéro de téléphone</li>
+         <li>Email de contact</li>
+       </ul>
+       ${typeof etaMinutes === 'number' ? `<p>Délai estimé: ~${etaMinutes} minutes</p>` : ''}`;
+
+  return `
+    <div style="font-family: Arial, sans-serif;">
+      <h2>${header}</h2>
+      <p>Bonjour, ${toEmail}</p>
+      <ul>${listItems}</ul>
+      ${physicalNote}
+      <p>Cordialement,<br/>Senegal-Livres</p>
+    </div>
+  `;
+}

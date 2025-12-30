@@ -10,6 +10,16 @@ interface SubmissionFormData {
   description: string;
   category: string;
   eBook: boolean;
+  // Nouveaux champs optionnels (alignés avec book)
+  slug?: string;
+  cover_image_url?: string;
+  pdf_r2_key?: string;
+  pdf_r2_url?: string;
+  has_ebook?: boolean;
+  // Contact auteur pour livraison physique
+  authorEmail?: string;
+  authorPhone?: string;
+  address?: string;
 }
 
 const initialFormData: SubmissionFormData = {
@@ -19,6 +29,14 @@ const initialFormData: SubmissionFormData = {
   description: '',
   category: '',
   eBook: false,
+  slug: '',
+  cover_image_url: '',
+  pdf_r2_key: '',
+  pdf_r2_url: '',
+  has_ebook: false,
+  authorEmail: '',
+  authorPhone: '',
+  address: '',
 };
 
 export default function SubmitBookPage() {
@@ -83,6 +101,15 @@ export default function SubmitBookPage() {
       uploadFormData.append('category', formData.category);
       uploadFormData.append('eBook', String(formData.eBook));
       uploadFormData.append('pdf', pdfFile);
+      // Champs optionnels
+      if (formData.slug) uploadFormData.append('slug', formData.slug);
+      if (formData.cover_image_url) uploadFormData.append('cover_image_url', formData.cover_image_url);
+      if (formData.pdf_r2_key) uploadFormData.append('pdf_r2_key', formData.pdf_r2_key);
+      if (formData.pdf_r2_url) uploadFormData.append('pdf_r2_url', formData.pdf_r2_url);
+      if (typeof formData.has_ebook === 'boolean') uploadFormData.append('has_ebook', String(formData.has_ebook));
+      if (formData.authorEmail) uploadFormData.append('authorEmail', formData.authorEmail);
+      if (formData.authorPhone) uploadFormData.append('authorPhone', formData.authorPhone);
+      if (formData.address) uploadFormData.append('address', formData.address);
 
       const res = await fetch('/api/submit-book', {
         method: 'POST',
@@ -208,6 +235,105 @@ export default function SubmitBookPage() {
                   required
                 />
               </div>
+            </div>
+
+            {/* Champs Cloudflare / SEO (optionnels) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Slug (optionnel)</label>
+                <input
+                  type="text"
+                  name="slug"
+                  value={formData.slug || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                  placeholder="ex: l-art-de-la-lecture"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Cover Image (R2 URL) - optionnel</label>
+                <input
+                  type="url"
+                  name="cover_image_url"
+                  value={formData.cover_image_url || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                  placeholder="https://cdn.example/r2/covers/123.jpg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">PDF R2 Key - optionnel</label>
+                <input
+                  type="text"
+                  name="pdf_r2_key"
+                  value={formData.pdf_r2_key || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                  placeholder="ebooks/123.pdf"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">PDF R2 URL - optionnel</label>
+                <input
+                  type="url"
+                  name="pdf_r2_url"
+                  value={formData.pdf_r2_url || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                  placeholder="https://cdn.example/r2/ebooks/123.pdf"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                name="has_ebook"
+                id="has_ebook"
+                checked={!!formData.has_ebook}
+                onChange={(e) => setFormData(prev => ({ ...prev, has_ebook: e.target.checked, eBook: e.target.checked }))}
+                className="w-4 h-4 text-[#128A41] border-gray-300 rounded focus:ring-[#128A41]"
+              />
+              <label htmlFor="has_ebook" className="ml-2 text-sm font-semibold text-gray-700">
+                📱 Has eBook (Cloudflare) - optionnel
+              </label>
+            </div>
+
+            {/* Coordonnées auteur pour livraison physique */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Email de l'auteur (optionnel)</label>
+                <input
+                  type="email"
+                  name="authorEmail"
+                  value={formData.authorEmail || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                  placeholder="auteur@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Téléphone de l'auteur (optionnel)</label>
+                <input
+                  type="tel"
+                  name="authorPhone"
+                  value={formData.authorPhone || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                  placeholder="+221 77 000 00 00"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Adresse pour livraison physique (optionnel)</label>
+              <textarea
+                name="address"
+                value={formData.address || ''}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                placeholder="Quartier, Ville, Pays"
+                rows={3}
+              />
             </div>
 
             <div>

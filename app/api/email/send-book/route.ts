@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { existsSync } from 'fs';
 import { join } from 'path';
+import { sendEmail, renderPurchaseDeliveryEmail } from '@/lib/email';
 
 // Configuration pour envoyer les PDFs par email
 // Note: Pour production, utilisez Resend ou SendGrid
@@ -48,11 +49,13 @@ export async function POST(req: Request) {
       const downloadUrl = hasPdf
         ? `${baseUrl}/api/pdfs/download?bookId=${encodeURIComponent(b.id)}`
         : null;
+      const r2Url = b.pdf_r2_url || null;
       return {
         bookId: b.id,
         title: b.title,
         hasPdf,
         downloadUrl,
+        r2Url,
       };
     });
 
@@ -79,8 +82,18 @@ export async function POST(req: Request) {
       }
     }
 
-    // TODO: Intégrer un service email (Resend/SendGrid) en PROD
-    // Réponse avec liens pour que le frontend envoie l'email ou affiche
+    // Envoi d'email si un provider est configuré, sinon on renvoie les données
+    try {
+      const html = renderPurchaseDeliveryEmail({
+        toEmail: email,
+        deliveries,
+        etaMinutes,
+      });
+      await sendEmail(email, anyPhysical ? 'Confirmation de paiement — Livraison' : 'Vos eBooks sont prêts', html);
+    } catch (mailErr) {
+      console.warn('[SendBook] Email provider not configured or failed, returning JSON only');
+    }
+
     return NextResponse.json({
       ok: true,
       message: anyPhysical
@@ -88,7 +101,6 @@ export async function POST(req: Request) {
         : 'Payment confirmed - eBooks ready for download',
       deliveries,
       etaMinutes,
-      note: 'In production, implement email service (Resend/SendGrid)'
     });
 
   } catch (error) {
