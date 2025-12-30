@@ -1,5 +1,9 @@
 export async function DELETE(request: Request) {
   try {
+    // Protect production: never delete books in production
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json({ success: false, error: 'Deletion disabled in production to protect data' }, { status: 403 });
+    }
     const { searchParams } = new URL(request.url);
     const bookId = searchParams.get('id');
     if (!bookId) {
