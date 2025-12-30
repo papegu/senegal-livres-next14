@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import CheckoutForm from "./CheckoutForm";
 import { Suspense } from "react";
 import ExtractViewerClient from "./ExtractViewerClient";
@@ -13,7 +14,22 @@ export default async function BookPage({ params }: Params) {
     ? { uuid: params.id }
     : { id: Number(params.id) };
 
-  const book = await prisma.book.findUnique({ where: whereClause });
+  let book: any = null;
+  try {
+    book = await prisma.book.findUnique({ where: whereClause });
+  } catch (e) {
+    const isId = Object.prototype.hasOwnProperty.call(whereClause, "id");
+    const query = supabase
+      .from("book")
+      .select("*")
+      .limit(1);
+    const { data, error } = isId
+      ? await query.eq("id", (whereClause as any).id)
+      : await query.eq("uuid", (whereClause as any).uuid);
+    if (!error && data && data.length > 0) {
+      book = data[0];
+    }
+  }
 
   if (!book) {
     return (
