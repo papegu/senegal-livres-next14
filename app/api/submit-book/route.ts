@@ -2,11 +2,10 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const runtime = "nodejs";
 
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
 
 export async function POST(req: Request) {
   try {
@@ -46,22 +45,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'File size exceeds 50MB limit' }, { status: 400 });
     }
 
-    // Create submissions directory if it doesn't exist
-    const submissionsDir = join(process.cwd(), 'public', 'submissions');
-    try {
-      await mkdir(submissionsDir, { recursive: true });
-    } catch (err) {
-      console.error('Error creating submissions directory:', err);
-    }
-
-    // Generate unique filename
-    const filename = `${uuidv4()}.pdf`;
-    const filepath = join(submissionsDir, filename);
-
-    // Save the PDF file
+    // Upload PDF to Supabase Storage (avoid filesystem writes in serverless)
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
+    const filename = `submission_${uuidv4()}_${Date.now()}.pdf`;
+    const { error: uploadError } = await supabase.storage
+      .from('pdfs')
+      .upload(filename, buffer, {
+        contentType: 'application/pdf',
+        upsert: true,
+      });
+    if (uploadError) {
+      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+    }
+    const publicUrl = supabase.storage.from('pdfs').getPublicUrl(filename).data.publicUrl;
 
     // Create submission record in database
     // Encapsuler les champs additionnels dans reviewNotes au format JSON
@@ -86,7 +83,7 @@ export async function POST(req: Request) {
         author,
         description,
         category,
-        pdfFile: `/submissions/${filename}`,
+        pdfFile: publicUrl,
         pdfFileName: filename,
         status: 'pending',
         reviewNotes: JSON.stringify(extra),
