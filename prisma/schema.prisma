@@ -3,14 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-}
-
-
-enum Role {
-  client
-  admin
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model adminstats {
@@ -24,22 +19,28 @@ model adminstats {
 }
 
 model book {
-  id          Int      @id @default(autoincrement())
-  uuid        String   @unique(map: "Book_uuid_key")
-  title       String
-  author      String
-  description String
-  price       Int
-  coverImage  String   @default("")
-  pdfFile     String   @default("")
-  pdfFileName String   @default("")
-  stock       Int      @default(0)
-  category    String   @default("")
-  status      String   @default("available")
-  eBook       Boolean  @default(true)
-  source      String   @default("admin")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              Int       @id @default(autoincrement())
+  uuid            String    @unique(map: "Book_uuid_key")
+  title           String
+  author          String
+  description     String
+  price           Float
+  coverImage      String    @default("")
+  pdfFile         String    @default("")
+  pdfFileName     String    @default("")
+  stock           Int       @default(0)
+  category        String    @default("")
+  status          String    @default("available")
+  eBook           Boolean   @default(true)
+  source          String    @default("admin")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+  slug            String?   @unique
+  cover_image_url String?
+  pdf_r2_key      String?
+  pdf_r2_url      String?
+  has_ebook       Boolean?  @default(false)
+  updated_at      DateTime? @default(now()) @db.Timestamptz(6)
 }
 
 model cartitem {
@@ -114,4 +115,9 @@ model user {
   blocked   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  client
+  admin
 }
