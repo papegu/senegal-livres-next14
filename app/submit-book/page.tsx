@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabaseClient } from '@/lib/supabase-client';
 
 interface SubmissionFormData {
   title: string;
@@ -106,7 +107,29 @@ export default function SubmitBookPage() {
         return;
       }
 
-      // Create FormData for file upload
+      // Request signed upload and upload PDF directly to Supabase
+      let uploadedPublicUrl = '';
+      let uploadedFileName = '';
+      if (pdfFile) {
+        const signedRes = await fetch('/api/storage/signed-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: pdfFile.name, contentType: pdfFile.type || 'application/pdf' }),
+        });
+        if (!signedRes.ok) {
+          const msg = await signedRes.text();
+          throw new Error(msg || 'Impossible de préparer le téléversement');
+        }
+        const { path, token, publicUrl } = await signedRes.json();
+        const { error: upErr } = await supabaseClient.storage
+          .from('pdfs')
+          .uploadToSignedUrl(path, token, pdfFile);
+        if (upErr) throw new Error(upErr.message || 'Échec du téléversement du PDF');
+        uploadedPublicUrl = publicUrl;
+        uploadedFileName = path.split('/').pop() || pdfFile.name;
+      }
+
+      // Create FormData for metadata only (no file sent to server)
       const uploadFormData = new FormData();
       uploadFormData.append('title', formData.title);
       uploadFormData.append('author', formData.author);
@@ -114,7 +137,8 @@ export default function SubmitBookPage() {
       uploadFormData.append('description', formData.description);
       uploadFormData.append('category', formData.category);
       uploadFormData.append('eBook', String(formData.eBook));
-      uploadFormData.append('pdf', pdfFile);
+      if (uploadedPublicUrl) uploadFormData.append('pdfPublicUrl', uploadedPublicUrl);
+      if (uploadedFileName) uploadFormData.append('pdfFileName', uploadedFileName);
       // Champs optionnels
       if (formData.slug) uploadFormData.append('slug', formData.slug);
       if (formData.cover_image_url) uploadFormData.append('cover_image_url', formData.cover_image_url);
@@ -418,7 +442,7 @@ export default function SubmitBookPage() {
                   </p>
                 )}
                 <p className="text-xs text-gray-500 mt-2">
-                  Maximum file size: 50MB
+                  Téléversement direct vers Supabase Storage. Taille conseillée: &lt; 50 Mo (selon votre connexion)
                 </p>
               </div>
             </div>

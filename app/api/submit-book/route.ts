@@ -10,7 +10,9 @@ import { supabase } from '@/lib/supabase';
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
-    const file = formData.get('pdf') as File;
+    const file = formData.get('pdf') as File | null;
+    const pdfPublicUrl = (formData.get('pdfPublicUrl') as string) || '';
+    const pdfFileNameForm = (formData.get('pdfFileName') as string) || '';
     const title = formData.get('title') as string;
     const author = formData.get('author') as string;
     const priceRaw = formData.get('price') as string;
@@ -27,22 +29,22 @@ export async function POST(req: Request) {
     const authorPhone = (formData.get('authorPhone') as string) || '';
     const address = (formData.get('address') as string) || '';
 
-    if (!file) {
-      return NextResponse.json({ error: 'No PDF file provided' }, { status: 400 });
+    if (!file && !pdfPublicUrl) {
+      return NextResponse.json({ error: 'No PDF provided (upload required)' }, { status: 400 });
     }
 
     if (!title || !author || !priceRaw || !category) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Validate file type
-    if (file.type !== 'application/pdf') {
-      return NextResponse.json({ error: 'Only PDF files are allowed' }, { status: 400 });
-    }
-
-    // Check file size (50MB limit)
-    if (file.size > 50 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File size exceeds 50MB limit' }, { status: 400 });
+    // Validate file only if provided via form-data
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        return NextResponse.json({ error: 'Only PDF files are allowed' }, { status: 400 });
+      }
+      if (file.size > 50 * 1024 * 1024) {
+        return NextResponse.json({ error: 'File size exceeds 50MB limit' }, { status: 400 });
+      }
     }
 
     // Normalize & validate price (allow comma)
@@ -55,20 +57,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Price must be between 0 and 1500 euros' }, { status: 400 });
     }
 
-    // Upload PDF to Supabase Storage (avoid filesystem writes in serverless)
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const filename = `submission_${uuidv4()}_${Date.now()}.pdf`;
-    const { error: uploadError } = await supabase.storage
-      .from('pdfs')
-      .upload(filename, buffer, {
-        contentType: 'application/pdf',
-        upsert: true,
-      });
-    if (uploadError) {
-      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+    // Determine PDF URL & name: prefer direct-uploaded public URL
+    let publicUrl = pdfPublicUrl;
+    let filename = pdfFileNameForm;
+    if (!publicUrl && file) {
+      // Fallback: server-side upload (legacy path)
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      filename = `submission_${uuidv4()}_${Date.now()}.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from('pdfs')
+        .upload(filename, buffer, {
+          contentType: 'application/pdf',
+          upsert: true,
+        });
+      if (uploadError) {
+        return NextResponse.json({ error: uploadError.message }, { status: 500 });
+      }
+      publicUrl = supabase.storage.from('pdfs').getPublicUrl(filename).data.publicUrl;
     }
-    const publicUrl = supabase.storage.from('pdfs').getPublicUrl(filename).data.publicUrl;
 
     // Create submission record in database
     // Encapsuler les champs additionnels dans reviewNotes au format JSON
