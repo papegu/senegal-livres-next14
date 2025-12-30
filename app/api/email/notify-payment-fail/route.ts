@@ -27,7 +27,8 @@ export async function POST(req: Request) {
       timestampIso: String(timestampIso || new Date().toISOString()),
     });
 
-    await sendEmail('contact@senegal-livres.sn', 'PayDunya - Échec de paiement', html);
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@senegal-livres.sn';
+    await sendEmail(ADMIN_EMAIL, 'PayDunya - Échec de paiement', html);
 
     return NextResponse.json({ ok: true }, { headers: corsHeaders });
   } catch (err) {

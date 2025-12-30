@@ -168,7 +168,7 @@ export default function SubmitBookPage() {
           } catch {}
         }
         if (status === 413 || /Request Entity Too Large/i.test(message)) {
-          message = 'Fichier trop volumineux (limite hébergeur atteinte). Réduisez le PDF (~4–5 Mo) ou contactez-nous.';
+          message = 'Fichier trop volumineux (limite atteinte). Réduisez le PDF (~4–5 Mo) ou envoyez-le par email à contact@senegal-livres.sn.';
         }
         throw new Error(message);
       }
@@ -442,7 +442,7 @@ export default function SubmitBookPage() {
                   </p>
                 )}
                 <p className="text-xs text-gray-500 mt-2">
-                  Téléversement direct vers Supabase Storage. Taille conseillée: &lt; 50 Mo (selon votre connexion)
+                  Téléversement direct vers Supabase Storage. Taille conseillée: &lt; 50 Mo (selon votre connexion). Si le fichier est trop grand, envoyez-le à contact@senegal-livres.sn.
                 </p>
               </div>
             </div>

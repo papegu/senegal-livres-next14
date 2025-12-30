@@ -118,3 +118,32 @@ export function renderPurchaseDeliveryEmail(params: {
     </div>
   `;
 }
+
+export function renderAdminPaymentStatusEmail(params: {
+  status: 'validated' | 'cancelled' | 'pending';
+  orderId: string;
+  amount?: number | null;
+  userEmail?: string | null;
+  bookTitles?: string[];
+  provider?: string;
+  responseCode?: string;
+  timestampIso?: string;
+}) {
+  const { status, orderId, amount, userEmail, bookTitles, provider, responseCode } = params;
+  const safeDate = new Date(params.timestampIso || new Date().toISOString()).toLocaleString('fr-FR', { timeZone: 'Africa/Dakar' });
+  const label = status === 'validated' ? 'Paiement validé' : status === 'cancelled' ? 'Paiement échoué/annulé' : 'Paiement en attente';
+  const books = (bookTitles && bookTitles.length) ? `<ul>${bookTitles.map(t => `<li>${t}</li>`).join('')}</ul>` : '<em>N/A</em>';
+  return `
+    <div style="font-family: Arial, sans-serif;">
+      <h2>${label}</h2>
+      <p>Commande: <strong>${orderId || 'N/A'}</strong></p>
+      <p>Montant: <strong>${typeof amount === 'number' ? amount.toFixed(2) + ' €' : 'N/A'}</strong></p>
+      <p>Client: <strong>${userEmail || 'N/A'}</strong></p>
+      <p>Fournisseur: <strong>${provider || 'PayDunya'}</strong></p>
+      <p>Code réponse: <strong>${responseCode || 'N/A'}</strong></p>
+      <p>Date: <strong>${safeDate}</strong></p>
+      <p>Livres:</p>
+      ${books}
+    </div>
+  `;
+}

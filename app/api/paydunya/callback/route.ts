@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { sendEmail, renderAdminPaymentStatusEmail } from '@/lib/email';
 
 // CORS headers pour permettre PayDunya et le front (production)
 const corsHeaders = {
@@ -110,6 +111,39 @@ export async function POST(req: Request) {
             } catch (emailError) {
               console.error('[PayDunya Callback] Error sending eBooks:', emailError);
             }
+          }
+
+          // Send admin notification (success)
+          try {
+            const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@senegal-livres.sn';
+            const booksForAdmin = [] as string[];
+            const parsedBookIdsForAdmin = (() => { try { return JSON.parse(updated.bookIds); } catch { return []; } })();
+            const bookIdsArrayForAdmin = Array.isArray(parsedBookIdsForAdmin)
+              ? parsedBookIdsForAdmin
+              : typeof updated.bookIds === 'string'
+                ? updated.bookIds.split(',').map((v: string) => v.trim()).filter(Boolean)
+                : [];
+            for (const rawId of bookIdsArrayForAdmin) {
+              const idNum = Number(rawId);
+              if (!Number.isNaN(idNum)) {
+                const b = await prisma.book.findUnique({ where: { id: idNum } });
+                if (b?.title) booksForAdmin.push(b.title);
+              }
+            }
+            const user = updated.userId ? await prisma.user.findUnique({ where: { id: updated.userId } }) : null;
+            const html = renderAdminPaymentStatusEmail({
+              status: paymentStatus as any,
+              orderId: updated.orderId || orderId,
+              amount: updated.amount,
+              userEmail: user?.email || null,
+              bookTitles: booksForAdmin,
+              provider: 'PayDunya',
+              responseCode: responseCode,
+              timestampIso: new Date().toISOString(),
+            });
+            await sendEmail(ADMIN_EMAIL, `Admin: ${paymentStatus === 'validated' ? 'Paiement validé' : paymentStatus === 'cancelled' ? 'Paiement échoué' : 'Paiement en attente'} (${updated.orderId || orderId})`, html);
+          } catch (adminEmailErr) {
+            console.error('[PayDunya Callback] Error sending admin payment status email:', adminEmailErr);
           }
 
           // If payment failed/cancelled: send immediate email notification (no persistence)
