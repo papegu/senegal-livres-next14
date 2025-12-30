@@ -58,11 +58,52 @@ export async function PUT(request: Request) {
       }
     }
 
-    // Mise à jour du livre dans Supabase
+    // Construire un payload propre sans le champ bookId (colonne inexistante)
+    const {
+      bookId,
+      title,
+      author,
+      price,
+      description,
+      coverImage,
+      status,
+      eBook,
+      // Cloudflare / SEO optionnels
+      slug,
+      cover_image_url,
+      pdf_r2_key,
+      pdf_r2_url,
+      has_ebook,
+    } = body;
+
+    const updatePayload: Record<string, any> = {
+      ...(title !== undefined ? { title: String(title) } : {}),
+      ...(author !== undefined ? { author: String(author) } : {}),
+      ...(description !== undefined ? { description: String(description) } : {}),
+      ...(price !== undefined ? { price: Number(price) } : {}),
+      ...(coverImage !== undefined ? { coverImage: String(coverImage) } : {}),
+      ...(status !== undefined ? { status: String(status) } : {}),
+      // Sync legacy + new ebook flags
+      ...(has_ebook !== undefined ? { has_ebook: !!(has_ebook === 'true' ? true : has_ebook) } : {}),
+      ...(eBook !== undefined ? { eBook: !!(eBook === 'true' ? true : eBook) } : {}),
+      // Cloudflare fields
+      ...(slug !== undefined ? { slug: String(slug) } : {}),
+      ...(cover_image_url !== undefined ? { cover_image_url: String(cover_image_url) } : {}),
+      ...(pdf_r2_key !== undefined ? { pdf_r2_key: String(pdf_r2_key) } : {}),
+      ...(pdf_r2_url !== undefined ? { pdf_r2_url: String(pdf_r2_url), pdfFile: String(pdf_r2_url) } : {}),
+      // Uploaded PDF fields
+      ...(pdfFile ? { pdfFile } : {}),
+      ...(pdfFileName ? { pdfFileName } : {}),
+      // Timestamps
+      updated_at: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Mise à jour du livre dans Supabase (par id)
     const { data: book, error } = await supabase
       .from('book')
-      .update({ ...body, pdfFile, pdfFileName })
-      .eq('id', body.bookId)
+      .update(updatePayload)
+      .eq('id', bookId)
       .select()
       .single();
     if (error) {
