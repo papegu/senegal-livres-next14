@@ -100,50 +100,68 @@ export default function AdminBooksPage() {
       }
 
       const adminToken = localStorage.getItem('admin_token') || '';
-      const method = editingId ? 'PUT' : 'POST';
-
       let res;
-      if (formData.pdfFile) {
-        // Envoi multipart/form-data si PDF sélectionné
-        const data = new FormData();
-        data.append('title', formData.title);
-        data.append('author', formData.author);
-        data.append('price', String(formData.price));
-        data.append('description', formData.description);
-        data.append('coverImage', formData.coverImage);
-        data.append('status', formData.status);
-        data.append('eBook', String(formData.eBook));
-        data.append('pdfFile', formData.pdfFile);
-        // Champs Cloudflare optionnels
-        if (formData.slug) data.append('slug', formData.slug);
-        if (formData.cover_image_url) data.append('cover_image_url', formData.cover_image_url);
-        if (formData.pdf_r2_key) data.append('pdf_r2_key', formData.pdf_r2_key);
-        if (formData.pdf_r2_url) data.append('pdf_r2_url', formData.pdf_r2_url);
-        if (typeof formData.has_ebook === 'boolean') data.append('has_ebook', String(formData.has_ebook));
-        if (editingId) data.append('bookId', editingId);
 
-        res = await fetch('/api/admin/books', {
-          method,
-          credentials: 'include',
-          headers: {
-            'x-admin-token': adminToken,
-          },
-          body: data,
+      if (editingId) {
+        // PATCH via Supabase route: persist Cloudflare fields and slug
+        const patchBody = {
+          title: formData.title,
+          author: formData.author,
+          price: formData.price,
+          description: formData.description,
+          coverImage: formData.coverImage,
+          status: formData.status,
+          // Cloudflare / SEO (optionnels)
+          slug: formData.slug,
+          cover_image_url: formData.cover_image_url,
+          pdf_r2_key: formData.pdf_r2_key,
+          pdf_r2_url: formData.pdf_r2_url,
+          has_ebook: formData.has_ebook,
+        };
+
+        res = await fetch(`/api/books/${editingId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patchBody),
         });
       } else {
-        // Sinon JSON classique
-        const body = editingId 
-          ? { bookId: editingId, ...formData }
-          : formData;
-        res = await fetch('/api/admin/books', {
-          method,
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-admin-token': adminToken,
-          },
-          body: JSON.stringify(body),
-        });
+        // Create flow remains on admin/books (existing logic)
+        const method = 'POST';
+        if (formData.pdfFile) {
+          const data = new FormData();
+          data.append('title', formData.title);
+          data.append('author', formData.author);
+          data.append('price', String(formData.price));
+          data.append('description', formData.description);
+          data.append('coverImage', formData.coverImage);
+          data.append('status', formData.status);
+          data.append('eBook', String(!!formData.has_ebook));
+          data.append('pdfFile', formData.pdfFile);
+          // Optional Cloudflare fields
+          if (formData.slug) data.append('slug', formData.slug);
+          if (formData.cover_image_url) data.append('cover_image_url', formData.cover_image_url);
+          if (formData.pdf_r2_key) data.append('pdf_r2_key', formData.pdf_r2_key);
+          if (formData.pdf_r2_url) data.append('pdf_r2_url', formData.pdf_r2_url);
+          if (typeof formData.has_ebook === 'boolean') data.append('has_ebook', String(formData.has_ebook));
+
+          res = await fetch('/api/admin/books', {
+            method,
+            credentials: 'include',
+            headers: { 'x-admin-token': adminToken },
+            body: data,
+          });
+        } else {
+          const body = { ...formData };
+          res = await fetch('/api/admin/books', {
+            method,
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-admin-token': adminToken,
+            },
+            body: JSON.stringify(body),
+          });
+        }
       }
 
       if (!res.ok) {
