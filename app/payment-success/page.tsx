@@ -55,7 +55,7 @@ export default function PaymentSuccessPage({ searchParams }: { searchParams: { o
 
         {!loading && tx && (
           <div className="mt-2 text-sm text-gray-700 space-y-1">
-            <p>Montant: <span className="font-semibold text-green-700">{tx.amount.toLocaleString()} FCFA</span></p>
+            <p>Montant: <span className="font-semibold text-green-700">{tx.amount.toLocaleString()} €</span></p>
             <p>Statut: <span className="font-semibold text-green-700">{tx.status}</span></p>
             {tx.paymentConfirmedAt && (
               <p>Confirmé le: {new Date(tx.paymentConfirmedAt).toLocaleString()}</p>
