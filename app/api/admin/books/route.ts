@@ -161,7 +161,6 @@ export async function PUT(request: Request) {
 // app/api/admin/books/route.ts
 
 // ⚠️ OBLIGATOIRE : forcer Node.js (PayDunya, fs, crypto, etc.)
-export const runtime = "nodejs";
 
 function slugify(input: string): string {
   return input
