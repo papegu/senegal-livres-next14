@@ -55,7 +55,20 @@ export default function PaymentSuccessPage({ searchParams }: { searchParams: { o
 
         {!loading && tx && (
           <div className="mt-2 text-sm text-gray-700 space-y-1">
-            <p>Montant: <span className="font-semibold text-green-700">{tx.amount.toLocaleString()} €</span></p>
+            {(() => {
+              const XOF_PER_EUR = Number(process.env.NEXT_PUBLIC_XOF_PER_EUR ?? '655.957');
+              const eur = Number(tx.amount || 0);
+              const xof = Math.round(eur * XOF_PER_EUR);
+              return (
+                <p>
+                  Montant:
+                  {' '}
+                  <span className="font-semibold text-green-700">{eur.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                  {' '}
+                  <span className="text-gray-500">(~{xof.toLocaleString()} FCFA)</span>
+                </p>
+              );
+            })()}
             <p>Statut: <span className="font-semibold text-green-700">{tx.status}</span></p>
             {tx.paymentConfirmedAt && (
               <p>Confirmé le: {new Date(tx.paymentConfirmedAt).toLocaleString()}</p>
