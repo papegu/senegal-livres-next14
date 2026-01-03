@@ -85,6 +85,37 @@ model submission {
   updatedAt   DateTime  @updatedAt
 }
 
+model articlesubmission {
+  id          Int       @id @default(autoincrement())
+  uuid        String    @unique
+  userId      Int
+  title       String
+  abstract    String
+  pdfUrl      String    @default("")
+  category    String    @default("")
+  status      String    @default("pending")
+  reviewNotes String    @default("")
+  submittedAt DateTime  @default(now())
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model article {
+  id            Int       @id @default(autoincrement())
+  uuid          String    @unique
+  authorId      Int
+  title         String
+  abstract      String
+  pdfUrl        String    @default("")
+  category      String    @default("")
+  status        String    @default("draft") // draft|published
+  paymentStatus String    @default("required") // required|paid
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
 model transaction {
   id                   Int       @id @default(autoincrement())
   uuid                 String    @unique(map: "Transaction_uuid_key")

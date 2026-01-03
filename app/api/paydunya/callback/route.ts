@@ -1,10 +1,10 @@
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const runtime = "nodejs";
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, renderAdminPaymentStatusEmail } from '@/lib/email';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 // CORS headers pour permettre PayDunya et le front (production)
 const corsHeaders = {
@@ -14,9 +14,7 @@ const corsHeaders = {
   'Access-Control-Allow-Credentials': 'true',
 };
 
-export async function OPTIONS() {
-  return new Response(null, { status: 204, headers: corsHeaders });
-}
+export async function OPTIONS() { return new Response(null, { status: 204, headers: corsHeaders }); }
 
 export async function POST(req: Request) {
   try {
@@ -267,11 +265,4 @@ export async function POST(req: Request) {
 }
 
 // Endpoint GET pour tester
-export async function GET(req: Request) {
-  return NextResponse.json({
-    message: 'PayDunya webhook endpoint is active',
-    endpoint: '/api/paydunya/callback',
-    method: 'POST',
-    description: 'Webhook for receiving payment confirmations from PayDunya',
-  }, { headers: corsHeaders });
-}
+export async function GET() { return NextResponse.json({ message: 'PayDunya webhook endpoint is active', endpoint: '/api/paydunya/callback', method: 'POST', description: 'Webhook for receiving payment confirmations from PayDunya' }, { headers: corsHeaders }); }

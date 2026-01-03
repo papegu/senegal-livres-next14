@@ -20,8 +20,13 @@ export async function POST(req: Request) {
     const PUBLIC_KEY = process.env.PAYDUNYA_PUBLIC_KEY;
     const PRIVATE_KEY = process.env.PAYDUNYA_PRIVATE_KEY;
     const TOKEN = process.env.PAYDUNYA_TOKEN;
-    const IS_SANDBOX = process.env.NODE_ENV !== 'production';
     const USE_MOCK = process.env.PAYDUNYA_USE_MOCK?.toLowerCase() === 'true';
+    // Allow explicit env override; auto-detect production when using live_* keys
+    const PAYDUNYA_ENV = (process.env.PAYDUNYA_ENV || '').toLowerCase();
+    const hasLiveKeys = (PUBLIC_KEY || '').startsWith('live_') || (PRIVATE_KEY || '').startsWith('live_');
+    const IS_SANDBOX = PAYDUNYA_ENV
+      ? PAYDUNYA_ENV === 'sandbox'
+      : (!hasLiveKeys && process.env.NODE_ENV !== 'production');
 
     console.log('[PayDunya] Environment Check:', {
       MASTER_KEY: !!MASTER_KEY,
@@ -58,7 +63,18 @@ export async function POST(req: Request) {
 
     // Construire le payload PayDunya
     // Base URL de l'application (prod: https://www.senegal-livres.sn)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (IS_SANDBOX ? 'http://localhost:3000' : 'https://senegal-livres.sn');
+    const callbackUrlEnv = process.env.PAYDUNYA_CALLBACK_URL;
+    // Prefer deriving base URL from callback origin if provided, to avoid localhost in prod
+    const derivedBaseFromCallback = (() => {
+      try {
+        return callbackUrlEnv ? new URL(callbackUrlEnv).origin : null;
+      } catch {
+        return null;
+      }
+    })();
+    const baseUrl = derivedBaseFromCallback
+      || process.env.NEXT_PUBLIC_BASE_URL
+      || (IS_SANDBOX ? 'http://localhost:3000' : 'https://senegal-livres.sn');
     const payload = {
       invoice: {
         items: [
@@ -77,7 +93,7 @@ export async function POST(req: Request) {
         website_url: baseUrl,
       },
       actions: {
-        callback_url: `${baseUrl}/api/paydunya/callback`,
+        callback_url: callbackUrlEnv && callbackUrlEnv.length > 0 ? callbackUrlEnv : `${baseUrl}/api/paydunya/callback`,
         cancel_url: `${baseUrl}/payment-cancel`,
         return_url: `${baseUrl}/payment-success?orderId=${orderId}`,
       },
@@ -91,6 +107,7 @@ export async function POST(req: Request) {
     // Headers pour l'API PayDunya
     const headers = {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       // En MOCK, on évite d'envoyer des headers non définis
       'PAYDUNYA-MASTER-KEY': MASTER_KEY || '',
       'PAYDUNYA-PRIVATE-KEY': PRIVATE_KEY || '',
@@ -167,9 +184,20 @@ export async function POST(req: Request) {
     }
 
     if (!response.ok || !data.response_code || data.response_code !== '00') {
-      console.error('[PayDunya] Invoice creation failed:', data);
+      console.error('[PayDunya] Invoice creation failed:', { status: response.status, apiBaseUrl, data });
       return NextResponse.json(
-        { error: 'Failed to create PayDunya invoice', details: data },
+        {
+          error: 'Failed to create PayDunya invoice',
+          status: response.status,
+          api: apiBaseUrl,
+          details: data,
+          env: {
+            sandbox: IS_SANDBOX,
+            nodeEnv: process.env.NODE_ENV,
+            hasLiveKeys,
+            baseUrl,
+          },
+        },
         { status: 400 }
       );
     }
@@ -194,6 +222,62 @@ export async function POST(req: Request) {
     console.error('[PayDunya] Create invoice error:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET() {
+  try {
+    const MASTER_KEY = process.env.PAYDUNYA_MASTER_KEY;
+    const PUBLIC_KEY = process.env.PAYDUNYA_PUBLIC_KEY;
+    const PRIVATE_KEY = process.env.PAYDUNYA_PRIVATE_KEY;
+    const TOKEN = process.env.PAYDUNYA_TOKEN;
+    const USE_MOCK = process.env.PAYDUNYA_USE_MOCK?.toLowerCase() === 'true';
+    const PAYDUNYA_ENV = (process.env.PAYDUNYA_ENV || '').toLowerCase();
+    const hasLiveKeys = (PUBLIC_KEY || '').startsWith('live_') || (PRIVATE_KEY || '').startsWith('live_');
+    const IS_SANDBOX = PAYDUNYA_ENV
+      ? PAYDUNYA_ENV === 'sandbox'
+      : (!hasLiveKeys && process.env.NODE_ENV !== 'production');
+
+    const callbackUrlEnv = process.env.PAYDUNYA_CALLBACK_URL;
+    const derivedBaseFromCallback = (() => {
+      try {
+        return callbackUrlEnv ? new URL(callbackUrlEnv).origin : null;
+      } catch {
+        return null;
+      }
+    })();
+    const baseUrl = derivedBaseFromCallback
+      || process.env.NEXT_PUBLIC_BASE_URL
+      || (IS_SANDBOX ? 'http://localhost:3000' : 'https://senegal-livres.sn');
+
+    const apiBaseUrl = IS_SANDBOX
+      ? 'https://sandbox.paydunya.com/api/v1'
+      : 'https://app.paydunya.com/api/v1';
+
+    return NextResponse.json({
+      ok: true,
+      api: apiBaseUrl,
+      env: {
+        sandbox: IS_SANDBOX,
+        nodeEnv: process.env.NODE_ENV,
+        useMock: USE_MOCK,
+        hasLiveKeys,
+        paydunyaEnv: PAYDUNYA_ENV || null,
+        baseUrl,
+        callbackUrl: callbackUrlEnv || null,
+      },
+      keys: {
+        masterKeyPresent: !!MASTER_KEY,
+        publicKeyPresent: !!PUBLIC_KEY,
+        privateKeyPresent: !!PRIVATE_KEY,
+        tokenPresent: !!TOKEN,
+      },
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

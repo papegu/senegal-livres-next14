@@ -17,7 +17,8 @@
     "seed:market": "node scripts/seed-market.js",
     "seed:users": "node scripts/seed-users.js",
     "prisma:validate": "prisma validate",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "verify:paydunya": "node scripts/verify-paydunya.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.958.0",
