@@ -49,6 +49,7 @@ export default function AdminBooksPage() {
   const [formData, setFormData] = useState<BookFormData>(initialFormData);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [adminToken, setAdminToken] = useState<string>('');
 
   // Client-side slugify helper (UI only)
   const slugify = (input: string) =>
@@ -60,6 +61,11 @@ export default function AdminBooksPage() {
       .replace(/-+/g, '-');
 
   useEffect(() => {
+    // Load admin token from localStorage for authenticated admin actions
+    try {
+      const t = localStorage.getItem('admin_token') || '';
+      setAdminToken(t);
+    } catch {}
     fetchBooks();
   }, []);
 
@@ -69,7 +75,7 @@ export default function AdminBooksPage() {
         cache: 'no-store',
         credentials: 'include',
         headers: {
-          'x-admin-token': localStorage.getItem('admin_token') || '',
+          'x-admin-token': adminToken || '',
         },
       });
       if (!res.ok) throw new Error('Failed to fetch books');
@@ -82,6 +88,14 @@ export default function AdminBooksPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSaveAdminToken = () => {
+    try {
+      localStorage.setItem('admin_token', adminToken || '');
+    } catch {}
+    // Refresh list with new token
+    fetchBooks();
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -283,6 +297,31 @@ export default function AdminBooksPage() {
           >
             ← Back to Dashboard
           </a>
+        </div>
+
+        {/* Admin Token control */}
+        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded p-4">
+          <div className="flex flex-col md:flex-row md:items-end gap-3">
+            <div className="flex-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Admin Token (x-admin-token)</label>
+              <input
+                type="text"
+                value={adminToken}
+                onChange={(e) => setAdminToken(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#128A41]"
+                placeholder="Enter ADMIN_TOKEN from Vercel settings"
+              />
+              <div className="text-xs text-gray-600 mt-1">
+                Required in production to create, edit, or delete books.
+              </div>
+            </div>
+            <button
+              onClick={handleSaveAdminToken}
+              className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 font-semibold"
+            >
+              Save Token
+            </button>
+          </div>
         </div>
 
         {error && (
