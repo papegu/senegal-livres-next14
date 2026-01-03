@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { sendEmail, renderAdminPaymentStatusEmail } from '@/lib/email';
+import { sendEmail, renderAdminPaymentStatusEmail, renderAdminPhysicalDeliveryInstructionEmail } from '@/lib/email';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -133,13 +133,24 @@ export async function POST(req: Request) {
               status: paymentStatus as any,
               orderId: updated.orderId || orderId,
               amount: updated.amount,
-              userEmail: user?.email || null,
+              userEmail: user?.email || updated.customerEmail || null,
               bookTitles: booksForAdmin,
               provider: 'PayDunya',
               responseCode: responseCode,
               timestampIso: new Date().toISOString(),
             });
             await sendEmail(ADMIN_EMAIL, `Admin: ${paymentStatus === 'validated' ? 'Paiement validé' : paymentStatus === 'cancelled' ? 'Paiement échoué' : 'Paiement en attente'} (${updated.orderId || orderId})`, html);
+
+            if (isSuccess) {
+              const shipHtml = renderAdminPhysicalDeliveryInstructionEmail({
+                orderId: updated.orderId || orderId,
+                amount: updated.amount,
+                userEmail: user?.email || updated.customerEmail || null,
+                bookTitles: booksForAdmin,
+                timestampIso: new Date().toISOString(),
+              });
+              await sendEmail(ADMIN_EMAIL, `Action requise: Expédier version physique (${updated.orderId || orderId})`, shipHtml);
+            }
           } catch (adminEmailErr) {
             console.error('[PayDunya Callback] Error sending admin payment status email:', adminEmailErr);
           }

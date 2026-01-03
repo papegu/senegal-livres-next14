@@ -147,3 +147,37 @@ export function renderAdminPaymentStatusEmail(params: {
     </div>
   `;
 }
+
+export function renderAdminPhysicalDeliveryInstructionEmail(params: {
+  orderId: string;
+  amount?: number | null;
+  userEmail?: string | null;
+  bookTitles?: string[];
+  timestampIso?: string;
+}) {
+  const { orderId, amount, userEmail, bookTitles } = params;
+  const safeDate = new Date(params.timestampIso || new Date().toISOString()).toLocaleString('fr-FR', { timeZone: 'Africa/Dakar' });
+  const books = (bookTitles && bookTitles.length) ? `<ul>${bookTitles.map(t => `<li>${t}</li>`).join('')}</ul>` : '<em>N/A</em>';
+  const amt = typeof amount === 'number' ? `${amount.toFixed(2)} €` : 'N/A';
+  const contact = userEmail || 'N/A';
+  return `
+    <div style="font-family: Arial, sans-serif;">
+      <h2>Action requise: expédier la version physique</h2>
+      <p><strong>Commande:</strong> ${orderId || 'N/A'}</p>
+      <p><strong>Montant:</strong> ${amt}</p>
+      <p><strong>Acheteur (contact email):</strong> ${contact}</p>
+      <p><strong>Livres concernés:</strong></p>
+      ${books}
+      <hr/>
+      <p>Veuillez envoyer la version physique du/des livre(s) à l'acheteur.</p>
+      <p>Si aucune adresse n'est enregistrée, contactez l'acheteur pour obtenir:</p>
+      <ul>
+        <li>Nom complet</li>
+        <li>Adresse de livraison</li>
+        <li>Numéro de téléphone</li>
+        <li>Email de contact</li>
+      </ul>
+      <p>Date: <strong>${safeDate}</strong></p>
+    </div>
+  `;
+}
