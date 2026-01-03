@@ -1,24 +1,57 @@
-export async function DELETE(request: Request) {`n  try {`n    const token = process.env.ADMIN_TOKEN;`n    const header = request.headers.get("x-admin-token");`n    if (token -and ($header -ne $token)) {`n      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });`n    }
-    // Protect production: never delete books in production
-    , { status: 403 });
-    }
-    const { searchParams } = new URL(request.url);
-    const bookId = searchParams.get('id');`n    const asNum = Number(bookId);`n    let prismaDeletedOk = false;`n    if (!Number.isNaN(asNum)) {`n      try { await prisma.book.delete({ where: { id: asNum } }); prismaDeletedOk = true; } catch {} }`n    if (!prismaDeletedOk) { try { await prisma.book.delete({ where: { uuid: String(bookId) } }); prismaDeletedOk = true; } catch {} }
-    if (!bookId) {
-      return NextResponse.json({ success: false, error: 'Missing book id' }, { status: 400 });
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const runtime = "nodejs";
+
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
+import { v4 as uuidv4 } from "uuid";
+
+function checkAdmin(req: Request) {
+  const token = process.env.ADMIN_TOKEN;
+  if (!token) return true;
+  const header = req.headers.get("x-admin-token");
+  return header === token;
+}
+
+export async function DELETE(request: Request) {
+  try {
+    if (!checkAdmin(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Delete the book from Supabase
-    const { error } = await supabase
-      .from('book')
-      .delete()
-      .eq('id', bookId);
-    if (error) {
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const { searchParams } = new URL(request.url);
+    const rawId = searchParams.get("id");
+    if (!rawId) {
+      return NextResponse.json({ error: "Missing id" }, { status: 400 });
     }
+
+    const numericId = Number(rawId);
+    let prismaOk = false;
+    if (!Number.isNaN(numericId)) {
+      try { await prisma.book.delete({ where: { id: numericId } }); prismaOk = true; } catch {}
+    }
+    if (!prismaOk) {
+      try { await prisma.book.delete({ where: { uuid: rawId } }); prismaOk = true; } catch {}
+    }
+
+    let sbError: any = null;
+    if (!Number.isNaN(numericId)) {
+      const { error } = await supabase.from("book").delete().eq("id", numericId);
+      if (error) sbError = error;
+    } else {
+      const { error } = await supabase.from("book").delete().eq("uuid", rawId);
+      if (error) sbError = error;
+    }
+
+    if (!prismaOk && sbError) {
+      return NextResponse.json({ error: "Failed to delete book" }, { status: 500 });
+    }
+
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json({ success: false, error: 'Failed to delete book' }, { status: 500 });
+    console.error("DELETE /api/admin/books error:", error);
+    return NextResponse.json({ error: "Failed to delete book" }, { status: 500 });
   }
 }
 export async function PUT(request: Request) {
@@ -126,9 +159,6 @@ export async function PUT(request: Request) {
   }
 }
 // app/api/admin/books/route.ts
-import { NextResponse } from "next/server";`nimport { prisma } from "@/lib/prisma";
-import { supabase } from '@/lib/supabase';
-import { v4 as uuidv4 } from 'uuid';
 
 // ⚠️ OBLIGATOIRE : forcer Node.js (PayDunya, fs, crypto, etc.)
 export const runtime = "nodejs";
