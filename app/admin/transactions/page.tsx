@@ -19,7 +19,7 @@ export default function AdminTransactionsPage() {
   const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'validated' | 'pending' | 'cancelled'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'validated' | 'pending' | 'cancelled'>('cancelled');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<{ [key: string]: string }>({});
@@ -190,8 +190,11 @@ export default function AdminTransactionsPage() {
                   <th className="px-6 py-3 text-left font-bold text-gray-800">ID Utilisateur</th>
                   <th className="px-6 py-3 text-left font-bold text-gray-800">Montant</th>
                   <th className="px-6 py-3 text-left font-bold text-gray-800">Méthode</th>
+                  <th className="px-6 py-3 text-left font-bold text-gray-800">Code Fournisseur</th>
+                  <th className="px-6 py-3 text-left font-bold text-gray-800">Statut Fournisseur</th>
                   <th className="px-6 py-3 text-left font-bold text-gray-800">Statut</th>
-                  <th className="px-6 py-3 text-left font-bold text-gray-800">Date</th>
+                  <th className="px-6 py-3 text-left font-bold text-gray-800">Créé</th>
+                  <th className="px-6 py-3 text-left font-bold text-gray-800">Mis à jour</th>
                   <th className="px-6 py-3 text-center font-bold text-gray-800">Actions</th>
                 </tr>
               </thead>
@@ -204,13 +207,18 @@ export default function AdminTransactionsPage() {
                       {transaction.amount.toLocaleString()} €
                     </td>
                     <td className="px-6 py-4 text-gray-800">{transaction.paymentMethod || transaction.method || 'N/A'}</td>
+                    <td className="px-6 py-4 text-gray-800 font-mono text-sm">{(transaction as any).paydunyaResponseCode || '—'}</td>
+                    <td className="px-6 py-4 text-gray-800 font-mono text-sm">{(transaction as any).paydunyaStatus || '—'}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded text-sm font-semibold ${getStatusColor(transaction.status)}`}>
                         {transaction.status === 'validated' ? 'Validée' : transaction.status === 'pending' ? 'En attente' : 'Annulée'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-gray-600 text-sm">
-                      {transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString('fr-FR') : 'N/A'}
+                      {transaction.createdAt ? new Date(transaction.createdAt).toLocaleString('fr-FR') : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 text-sm">
+                      {(transaction as any).updatedAt ? new Date((transaction as any).updatedAt).toLocaleString('fr-FR') : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex gap-2 justify-center">

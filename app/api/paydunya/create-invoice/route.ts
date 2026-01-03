@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { sendEmail, renderAdminPaymentStatusEmail } from '@/lib/email';
 import { v4 as uuid } from 'uuid';
 
 export async function POST(req: Request) {
@@ -184,13 +185,56 @@ export async function POST(req: Request) {
     }
 
     if (!response.ok || !data.response_code || data.response_code !== '00') {
+      const responseCode = data?.response_code || String(response.status);
+      const responseText = data?.response_text || data?.error || 'Unknown error';
       console.error('[PayDunya] Invoice creation failed:', { status: response.status, apiBaseUrl, data });
+
+      // Update the previously created transaction as cancelled
+      try {
+        await prisma.transaction.update({
+          where: { uuid: transactionId },
+          data: {
+            status: 'cancelled',
+            paydunyaResponseCode: responseCode,
+            paydunyaStatus: 'failed',
+            rawPayload: JSON.stringify(data || {}),
+          },
+        });
+      } catch (updErr) {
+        console.warn('[PayDunya] Failed to mark transaction as cancelled:', updErr);
+      }
+
+      // Lightweight admin notification (email or console)
+      try {
+        const adminEmailHtml = renderAdminPaymentStatusEmail({
+          status: 'cancelled',
+          orderId,
+          amount: Math.round(Number(amount)),
+          userEmail: customerEmail || null,
+          bookTitles: undefined,
+          provider: 'PayDunya',
+          responseCode,
+          timestampIso: new Date().toISOString(),
+        });
+        await sendEmail('admin@senegal-livres.sn', 'PayDunya – échec de création de facture', adminEmailHtml);
+      } catch (mailErr) {
+        console.warn('[PayDunya] Failed to send admin notification email:', mailErr);
+      }
+
+      const friendlyMessage = responseCode === '1001'
+        ? 'Compte PayDunya non activé (KYC requis). Merci de compléter la validation sur le dashboard.'
+        : 'Création de facture PayDunya impossible. Vérifiez l’activation du compte et la configuration du store.';
+
       return NextResponse.json(
         {
           error: 'Failed to create PayDunya invoice',
+          provider: 'PayDunya',
           status: response.status,
           api: apiBaseUrl,
           details: data,
+          response_code: responseCode,
+          response_text: responseText,
+          friendlyMessage,
           env: {
             sandbox: IS_SANDBOX,
             nodeEnv: process.env.NODE_ENV,

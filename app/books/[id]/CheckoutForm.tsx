@@ -25,7 +25,13 @@ export default function CheckoutForm({ bookId, price }: { bookId: string; price:
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Payment creation failed");
+        const providerText = data.response_text || data?.details?.response_text;
+        const providerCode = data.response_code || data?.details?.response_code;
+        const baseMsg = data.friendlyMessage || data.error || "Payment creation failed";
+        const composed = providerText
+          ? `${baseMsg} — ${providerText}${providerCode ? ` (code ${providerCode})` : ''}`
+          : baseMsg;
+        setError(composed);
         setLoading(false);
         return;
       }
