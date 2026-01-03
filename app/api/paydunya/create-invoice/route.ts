@@ -10,10 +10,38 @@ import { v4 as uuid } from 'uuid';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { amount, description, customerEmail, userId, bookIds } = body;
+    const { amount, description, customerEmail, userId, bookIds, currency } = body;
+
+    // Amount conversion: Client currency (default EUR) -> Provider currency (XOF)
+    const PRICE_CURRENCY = (currency || process.env.PRICE_CURRENCY || 'EUR').toUpperCase();
+    const XOF_PER_EUR = Number(process.env.XOF_PER_EUR || '655.957');
+    const MIN_XOF = Number(process.env.PAYDUNYA_MIN_XOF || '200');
+
+    const clientAmount = Math.round(Number(amount));
+    const providerAmount = PRICE_CURRENCY === 'EUR'
+      ? Math.round(clientAmount * XOF_PER_EUR)
+      : Math.round(clientAmount);
 
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
+    }
+
+    if (providerAmount < MIN_XOF) {
+      const msg = `Montant converti trop faible pour PayDunya. Minimum ${MIN_XOF} XOF requis.`;
+      return NextResponse.json({
+        error: msg,
+        provider: 'PayDunya',
+        response_code: '4003',
+        response_text: 'Invalid Total Amount. Mimimum checkout amount is 200 FCFA.',
+        friendlyMessage: msg,
+        details: {
+          priceCurrency: PRICE_CURRENCY,
+          clientAmount,
+          providerAmount,
+          minXof: MIN_XOF,
+          xofPerEur: XOF_PER_EUR,
+        },
+      }, { status: 400 });
     }
 
     // Récupérer les clés PayDunya depuis l'environnement
@@ -56,7 +84,7 @@ export async function POST(req: Request) {
         orderId,
         userId: userId ? Number(userId) : null,
         bookIds: Array.isArray(bookIds) ? JSON.stringify(bookIds) : "",
-        amount: Math.round(Number(amount)),
+        amount: clientAmount,
         paymentMethod: 'paydunya',
         status: 'pending',
       },
@@ -82,12 +110,13 @@ export async function POST(req: Request) {
           {
             name: description || 'Achat de livres',
             quantity: 1,
-            unit_price: Math.round(Number(amount)),
-            total_price: Math.round(Number(amount)),
+            unit_price: providerAmount,
+            total_price: providerAmount,
           },
         ],
-        total_amount: Math.round(Number(amount)),
+        total_amount: providerAmount,
         description: description || 'Paiement Sénégal Livres',
+        // currency: 'XOF' // optional; PayDunya defaults to XOF
       },
       store: {
         name: 'Sénégal Livres',
@@ -123,6 +152,7 @@ export async function POST(req: Request) {
     
     console.log(`[PayDunya] Using ${IS_SANDBOX ? 'SANDBOX' : 'PRODUCTION'} API at ${apiBaseUrl}`);
     console.log('[PayDunya] Creating invoice with payload:', JSON.stringify(payload, null, 2));
+    console.log('[PayDunya] Amounts:', { PRICE_CURRENCY, clientAmount, providerAmount, XOF_PER_EUR, MIN_XOF });
 
     // Mode MOCK pour développement local
     if (USE_MOCK) {

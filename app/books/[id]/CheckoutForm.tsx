@@ -18,6 +18,7 @@ export default function CheckoutForm({ bookId, price }: { bookId: string; price:
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           amount: price, 
+          currency: 'EUR',
           description: `Achat d'un livre`,
           bookIds: [bookId],
         }),
