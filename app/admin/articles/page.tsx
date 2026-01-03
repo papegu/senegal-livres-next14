@@ -1,7 +1,16 @@
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const runtime = 'nodejs';
+
 async function getArticles() {
-  return prisma.article.findMany({ orderBy: { createdAt: 'desc' } });
+  try {
+    return await prisma.article.findMany({ orderBy: { createdAt: 'desc' } });
+  } catch (err) {
+    console.error('[AdminArticles] DB query failed, returning empty list:', err);
+    return [] as any[];
+  }
 }
 
 async function addArticle(formData: FormData) {

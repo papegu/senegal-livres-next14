@@ -1,7 +1,16 @@
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const runtime = 'nodejs';
+
 async function getSubmissions() {
-  return prisma.articlesubmission.findMany({ orderBy: { submittedAt: 'desc' } });
+  try {
+    return await prisma.articlesubmission.findMany({ orderBy: { submittedAt: 'desc' } });
+  } catch (err) {
+    console.error('[AdminArticleSubmissions] DB query failed, returning empty list:', err);
+    return [] as any[];
+  }
 }
 
 async function moderate(id: number, action: 'approve'|'reject') {

@@ -1,10 +1,23 @@
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const runtime = 'nodejs';
+
+async function getArticlesSafe() {
+  try {
+    return await prisma.article.findMany({
+      where: { status: 'published', paymentStatus: 'paid' },
+      orderBy: { publishedAt: 'desc' },
+    });
+  } catch (err) {
+    console.error('[AcceptedArticles] DB query failed, returning empty list:', err);
+    return [] as Array<{ id: number; title: string; abstract: string; pdfUrl: string | null; publishedAt: Date | null }>;
+  }
+}
+
 export default async function AcceptedArticlesPage() {
-  const articles = await prisma.article.findMany({
-    where: { status: 'published', paymentStatus: 'paid' },
-    orderBy: { publishedAt: 'desc' },
-  });
+  const articles = await getArticlesSafe();
 
   return (
     <div className="min-h-screen bg-[#F4E9CE] p-8">
