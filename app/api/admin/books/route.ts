@@ -1,11 +1,9 @@
-export async function DELETE(request: Request) {
-  try {
+export async function DELETE(request: Request) {`n  try {`n    const token = process.env.ADMIN_TOKEN;`n    const header = request.headers.get("x-admin-token");`n    if (token -and ($header -ne $token)) {`n      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });`n    }
     // Protect production: never delete books in production
-    if (process.env.NODE_ENV === 'production') {
-      return NextResponse.json({ success: false, error: 'Deletion disabled in production to protect data' }, { status: 403 });
+    , { status: 403 });
     }
     const { searchParams } = new URL(request.url);
-    const bookId = searchParams.get('id');
+    const bookId = searchParams.get('id');`n    const asNum = Number(bookId);`n    let prismaDeletedOk = false;`n    if (!Number.isNaN(asNum)) {`n      try { await prisma.book.delete({ where: { id: asNum } }); prismaDeletedOk = true; } catch {} }`n    if (!prismaDeletedOk) { try { await prisma.book.delete({ where: { uuid: String(bookId) } }); prismaDeletedOk = true; } catch {} }
     if (!bookId) {
       return NextResponse.json({ success: false, error: 'Missing book id' }, { status: 400 });
     }
@@ -18,7 +16,7 @@ export async function DELETE(request: Request) {
     if (error) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
-    return NextResponse.json({ success: true, message: 'Book deleted' }, { status: 200 });
+    return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json({ success: false, error: 'Failed to delete book' }, { status: 500 });
   }
@@ -128,7 +126,7 @@ export async function PUT(request: Request) {
   }
 }
 // app/api/admin/books/route.ts
-import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";`nimport { prisma } from "@/lib/prisma";
 import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -274,4 +272,5 @@ export async function POST(request: Request) {
     );
   }
 }
+
 
