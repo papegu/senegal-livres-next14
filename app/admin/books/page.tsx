@@ -229,8 +229,12 @@ export default function AdminBooksPage() {
       return;
     }
 
+    let prev: BookWithStatus[] | null = null;
     try {
       setError('');
+      prev = [...books];
+      setBooks((b) => b.filter((x) => x.id !== bookId));
+
       const res = await fetch(`/api/admin/books?id=${bookId}`, {
         method: 'DELETE',
         credentials: 'include',
@@ -241,11 +245,13 @@ export default function AdminBooksPage() {
 
       if (!res.ok) {
         const errData = await res.json();
+        if (prev) setBooks(prev);
         throw new Error(errData.error || 'Failed to delete book');
       }
 
       await fetchBooks();
     } catch (err) {
+      if (prev) setBooks(prev);
       console.error('Error deleting book:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete book');
     }
