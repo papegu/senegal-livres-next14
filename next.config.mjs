@@ -5,6 +5,14 @@ const nextConfig = {
 	// Ensure Vercel uses server runtime, not static export
 	output: 'standalone',
 	reactStrictMode: true,
+	images: {
+		remotePatterns: [
+			{
+				protocol: 'https',
+				hostname: 'i.ibb.co',
+			},
+		],
+	},
 };
 
 export default nextConfig;
