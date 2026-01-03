@@ -1,3 +1,29 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+import Link from "next/link";
+
+export default function PaymentSuccessPage({ searchParams }: { searchParams: { orderId?: string } }) {
+  const orderId = searchParams?.orderId || "";
+  return (
+    <main className="min-h-screen flex items-center justify-center p-6">
+      <div className="max-w-xl w-full space-y-4 text-center">
+        <h1 className="text-2xl font-semibold">Paiement réussi</h1>
+        <p className="text-gray-700">
+          Merci pour votre achat. Votre paiement a été validé.
+        </p>
+        {orderId && (
+          <p className="text-sm text-gray-600">Référence commande: {orderId}</p>
+        )}
+        <div className="flex items-center justify-center gap-3">
+          <Link href="/" className="px-4 py-2 rounded bg-green-600 text-white">
+            Retour à l'accueil
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
+}
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
