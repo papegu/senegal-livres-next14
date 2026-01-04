@@ -1,64 +1,30 @@
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const runtime = "nodejs";
-
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { supabase } from "@/lib/supabase";
-import { v4 as uuidv4 } from "uuid";
-
-function checkAdmin(req: Request) {
-  const token = process.env.ADMIN_TOKEN;
-  if (!token) return true;
-  const header = req.headers.get("x-admin-token");
-  return header === token;
-}
-
 export async function DELETE(request: Request) {
   try {
-    if (!checkAdmin(request)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Protect production: never delete books in production
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json({ success: false, error: 'Deletion disabled in production to protect data' }, { status: 403 });
     }
-
     const { searchParams } = new URL(request.url);
-    const rawId = searchParams.get("id");
-    if (!rawId) {
-      return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    const bookId = searchParams.get('id');
+    if (!bookId) {
+      return NextResponse.json({ success: false, error: 'Missing book id' }, { status: 400 });
     }
 
-    const numericId = Number(rawId);
-    let prismaOk = false;
-    if (!Number.isNaN(numericId)) {
-      try { await prisma.book.delete({ where: { id: numericId } }); prismaOk = true; } catch {}
+    // Delete the book from Supabase
+    const { error } = await supabase
+      .from('book')
+      .delete()
+      .eq('id', bookId);
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
-    if (!prismaOk) {
-      try { await prisma.book.delete({ where: { uuid: rawId } }); prismaOk = true; } catch {}
-    }
-
-    let sbError: any = null;
-    if (!Number.isNaN(numericId)) {
-      const { error } = await supabase.from("book").delete().eq("id", numericId);
-      if (error) sbError = error;
-    } else {
-      const { error } = await supabase.from("book").delete().eq("uuid", rawId);
-      if (error) sbError = error;
-    }
-
-    if (!prismaOk && sbError) {
-      return NextResponse.json({ error: "Failed to delete book" }, { status: 500 });
-    }
-
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ success: true, message: 'Book deleted' }, { status: 200 });
   } catch (error) {
-    console.error("DELETE /api/admin/books error:", error);
-    return NextResponse.json({ error: "Failed to delete book" }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Failed to delete book' }, { status: 500 });
   }
 }
 export async function PUT(request: Request) {
   try {
-    if (!checkAdmin(request)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
     let formData, body;
     const contentType = request.headers.get('content-type') || '';
     if (contentType.includes('multipart/form-data')) {
@@ -150,27 +116,6 @@ export async function PUT(request: Request) {
         { status: 500 }
       );
     }
-
-    // Sync update to Prisma via uuid
-    try {
-      const sbUuid = (book as any)?.uuid as string | undefined;
-      if (sbUuid) {
-        const prismaUpdate: Record<string, any> = {
-          ...(updatePayload.title ? { title: updatePayload.title } : {}),
-          ...(updatePayload.author ? { author: updatePayload.author } : {}),
-          ...(updatePayload.description ? { description: updatePayload.description } : {}),
-          ...(typeof updatePayload.price !== 'undefined' ? { price: Number(updatePayload.price) } : {}),
-          ...(updatePayload.coverImage ? { coverImage: updatePayload.coverImage } : {}),
-          ...(updatePayload.pdfFile ? { pdfFile: updatePayload.pdfFile } : {}),
-          ...(updatePayload.pdfFileName ? { pdfFileName: updatePayload.pdfFileName } : {}),
-        };
-        if (Object.keys(prismaUpdate).length > 0) {
-          await prisma.book.update({ where: { uuid: sbUuid }, data: prismaUpdate });
-        }
-      }
-    } catch (e) {
-      console.error("Warn: Prisma sync update failed:", e);
-    }
     return NextResponse.json(
       { success: true, book },
       { status: 200 }
@@ -183,8 +128,12 @@ export async function PUT(request: Request) {
   }
 }
 // app/api/admin/books/route.ts
+import { NextResponse } from "next/server";
+import { supabase } from '@/lib/supabase';
+import { v4 as uuidv4 } from 'uuid';
 
 // ⚠️ OBLIGATOIRE : forcer Node.js (PayDunya, fs, crypto, etc.)
+export const runtime = "nodejs";
 
 function slugify(input: string): string {
   return input
@@ -214,11 +163,8 @@ async function ensureUniqueSlug(base: string): Promise<string> {
   }
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    if (!checkAdmin(request)) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
     // Récupérer tous les livres depuis Supabase
     const { data: books, error } = await supabase
       .from('book')
@@ -252,9 +198,6 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    if (!checkAdmin(request)) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
     // Supporte formData pour upload PDF
     let formData, body;
     const contentType = request.headers.get('content-type') || '';
@@ -320,25 +263,6 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-
-    // Also insert into Prisma for public catalog
-    try {
-      const priceNum = Number((book as any)?.price ?? body.price ?? 0) || 0;
-      await prisma.book.create({
-        data: {
-          uuid,
-          title: String((book as any)?.title ?? body.title ?? ''),
-          author: String((book as any)?.author ?? body.author ?? ''),
-          description: String((book as any)?.description ?? body.description ?? ''),
-          price: priceNum,
-          coverImage: String((book as any)?.coverImage ?? body.coverImage ?? ''),
-          pdfFile: String((book as any)?.pdfFile ?? pdfFile ?? ''),
-          pdfFileName: String((book as any)?.pdfFileName ?? pdfFileName ?? ''),
-        },
-      });
-    } catch (e) {
-      console.error("Warn: Prisma sync insert failed:", e);
-    }
     return NextResponse.json(
       { success: true, book },
       { status: 201 }
@@ -350,5 +274,4 @@ export async function POST(request: Request) {
     );
   }
 }
-
 
